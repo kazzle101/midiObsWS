@@ -1,8 +1,8 @@
 {
     "midiDevice": "X-TOUCH MINI 0",
-    "midiOutputDevice": "X-TOUCH MINI 1",
-    "midiConfigured": 1,
+    "midiOutput": "",
     "midiChannel": 10,
+    "midiConfigured": 1,
     "midiConfiguration": [
         {
             "section": "controls",
@@ -38,13 +38,11 @@
             "section": "controls",
             "action": "ToggleRecord",
             "name": "Toggle Recording",
-            "buttonID": 8,
+            "buttonID": -1,
             "changeID": -1,
-            "buttonValue": 1,
+            "buttonValue": 0,
             "changeValue": 0,
-            "deviceType": "",
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "deviceType": ""
         },
         {
             "section": "controls",
@@ -130,26 +128,31 @@
             "section": "controls",
             "action": "SetStudioModeEnabled",
             "name": "Toggle Studio Mode",
-            "buttonID": 9,
+            "buttonID": -1,
             "changeID": -1,
-            "buttonValue": 1,
+            "buttonValue": 0,
             "changeValue": 0,
-            "deviceType": "",
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "deviceType": ""
         },
         {
             "section": "sources",
-            "action": "WebCam Audio",
-            "name": "WebCam Audio",
-            "buttonID": 0,
-            "changeID": 1,
+            "action": "Video Capture Device",
+            "name": "Video Capture Device",
+            "buttonID": -1,
+            "changeID": -1,
             "buttonValue": 0,
-            "changeValue": 97,
-            "deviceType": "audio",
-            "changeLastVal": 96,
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "changeValue": 0,
+            "deviceType": "video"
+        },
+        {
+            "section": "sources",
+            "action": "Display Capture",
+            "name": "Display Capture",
+            "buttonID": -1,
+            "changeID": -1,
+            "buttonValue": 0,
+            "changeValue": 0,
+            "deviceType": "video"
         },
         {
             "section": "sources",
@@ -158,7 +161,47 @@
             "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
-            "changeValue": 97,
+            "changeValue": 0,
+            "deviceType": "audio"
+        },
+        {
+            "section": "sources",
+            "action": "Media Source",
+            "name": "Media Source",
+            "buttonID": -1,
+            "changeID": -1,
+            "buttonValue": 0,
+            "changeValue": 0,
+            "deviceType": "video"
+        },
+        {
+            "section": "sources",
+            "action": "Chrome Capture",
+            "name": "Chrome Capture",
+            "buttonID": -1,
+            "changeID": -1,
+            "buttonValue": 0,
+            "changeValue": 0,
+            "deviceType": "video"
+        },
+        {
+            "section": "sources",
+            "action": "Webcam 1080p",
+            "name": "Webcam 1080p",
+            "buttonID": -1,
+            "changeID": -1,
+            "buttonValue": 0,
+            "changeValue": 0,
+            "deviceType": "video"
+        },
+        {
+            "section": "sources",
+            "action": "WebCam Audio",
+            "name": "WebCam Audio",
+            "buttonID": -1,
+            "changeID": -1,
+            "buttonValue": 0,
+            "changeValue": 0,
             "deviceType": "audio"
         },
         {
@@ -168,14 +211,14 @@
             "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
-            "changeValue": 100,
+            "changeValue": 0,
             "deviceType": "audio"
         },
         {
             "section": "scenes",
             "action": "WebCam",
             "name": "WebCam",
-            "buttonID": 16,
+            "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
             "changeValue": 0,
@@ -185,7 +228,7 @@
             "section": "scenes",
             "action": "Chrome",
             "name": "Chrome",
-            "buttonID": 17,
+            "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
             "changeValue": 0,
@@ -195,11 +238,12 @@
             "section": "scenes",
             "action": "Desktop",
             "name": "Desktop",
-            "buttonID": 18,
+            "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
             "changeValue": 0,
             "deviceType": ""
         }
-    ]
+    ],
+    "midiOutputDevice": "X-TOUCH MINI 1"
 }
