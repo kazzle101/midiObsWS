@@ -5,7 +5,7 @@ This system has been written to provide basic functionality; scene switching, vo
 
 **Version 0.1 beta - December 2022**
 
-Written in Python 3.9, use OBS v28 or higher this comes with obs-websockets included.
+Written in Python 3.9, use OBS v28 or higher as this comes with obs-websockets 5 included.
 
 I've tested this in a Windows 11 PC. It should work with a MAC but I had problems getting tkinter installed, it should also work with Liunx distributions that have OBS 28 installed. The MIDI device I've used is a Behringer X-Touch Midi.
 
@@ -53,6 +53,6 @@ You can now press buttons and twiddle knobs. Enjoy.
 - The GUI is a bit old fashioned, this is an attempt to have an interface that will work on multiple platforms and be reasonably simple. Maybe I should learn Node.JS.
 
 ## Links
-https://obsproject.com/
-https://github.com/obsproject/obs-websocket - this is now included in OBS, v28.0.0 onwards
-https://github.com/IRLToolkit/simpleobsws/tree/master
+- https://obsproject.com/
+- https://github.com/obsproject/obs-websocket - this is now included in OBS, v28.0.0 onwards
+- https://github.com/IRLToolkit/simpleobsws/tree/master
