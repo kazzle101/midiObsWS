@@ -97,6 +97,8 @@ class JsonFileSettings:
 
         midiObsData = {}
         midiObsData["midiDevice"] = midiDevices[0]
+        midiObsData["midiOutput"] = ""
+        midiObsData["midiChannel"] = 10 
         midiObsData["midiConfigured"] = 0
 
         # print(json.dumps(inputsAndScenes, indent=4, sort_keys=False))

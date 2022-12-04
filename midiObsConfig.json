@@ -1,6 +1,6 @@
 {
     "config": {
-        "hostSet": 0,
+        "hostSet": 1,
         "wsAddress": "localhost",
         "wsPort": "4455",
         "wsPassword": "hWNyfZdhRfIUWNVk",

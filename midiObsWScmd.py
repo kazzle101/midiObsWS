@@ -5,6 +5,8 @@ import json
 from time import time
 import asyncio
 import simpleobsws
+import re
+import ast
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
@@ -12,6 +14,7 @@ if __name__ == "__main__":
 
 import midiObsJSONsetup as obsJSONsetup
 import midiObsControls as obsControls
+import midiObsMidiSetup as obsMidi
 
 # https://github.com/obsproject/obs-websocket/blob/release/5.0.0/docs/generated/protocol.md
 
@@ -66,7 +69,7 @@ class ObsWScmd(object):
         return 0
 
 
-    async def makeRequest(self, rType, rData=None):
+    async def makeRequest(self, obsSocket, rType, rData):
         response = None
 
         if not rData==None:
@@ -77,24 +80,32 @@ class ObsWScmd(object):
 
         # print(request)
 
-        ret = await self.obsSocket.call(request)
-        if ret.ok():             
-            response = ret.responseData
-        else:
-            error = "single request failed, response data: {}".format(ret.responseData)
-            print(error)
-            print(str(request))
+        try:
+            ret = await obsSocket.call(request)
+            if ret.ok():             
+                response = ret.responseData
+            else:
+                error = "single request failed, response data: {}".format(ret.responseData)
+                print(error)
+                print(str(request))
+                return True, error
+        except Exception as e:
+            print(e)
+            return True, e
 
-        # await self.obsSocket.disconnect() # Disconnect from the websocket server cleanly
 
+        # the response string is encapsulated with single quotes instead of doubles
+        # so json.loads(response) won't work. ast.literal_eval fixes that.
+
+        # response = ast.literal_eval(response)        
         # print(json.dumps(response, indent=4, sort_keys=False))
-        return response
+        return False, response
 
     async def getInputVolume(self, source, db=True):    
         rType = "GetInputVolume"
         rData = {"inputName": source} 
 
-        r = await self.makeRequest(rType, rData)
+        e, r = await self.makeRequest(self.obsSocket, rType, rData)
 
         if db:
             v = int(r["inputVolumeDb"])
@@ -118,7 +129,7 @@ class ObsWScmd(object):
             rData["inputVolumeMul"] = v
 
         rType = "SetInputVolume"
-        r = await self.makeRequest(rType, rData)
+        e, r = await self.makeRequest(self.obsSocket, rType, rData)
     
         return r
 
@@ -126,14 +137,14 @@ class ObsWScmd(object):
 
         rType = "GetInputList"
         rData = None
-        r = await self.makeRequest(rType, rData)
+        e, r = await self.makeRequest(self.obsSocket, rType, rData)
 
         return r
 
     async def makeToggleRequest(self, action, rData=None):
 
         rType = action
-        r = await self.makeRequest(rType, rData)
+        e, r = await self.makeRequest(self.obsSocket, rType, rData)
         return r
 
     async def doButtonAction(self, midiData, midiVal):
@@ -165,17 +176,132 @@ class ObsWScmd(object):
 
         return str(response)
 
-    async def getCurrentValues(self, midiConfig):
+    def toggleToGet(self, toggleAction):
 
-        for m in midiConfig:
+        if "Record" in toggleAction:
+            return "GetRecordStatus"
+
+        if "StudioMode" in toggleAction:
+            return "GetStudioModeEnabled"
+
+        return False
+
+    def getValFromResponse(self, data):
+        # p = re.compile('(?<!\\\\)\'')
+
+        print("getValFromResponse")
+        print(type(data))
+        print(data)
+
+
+        try:
+            # response = p.sub('\"', response)
+            # response.replace("False,","\"False\",")
+            # response.replace("True,","\"True\",")
+            # print(response)
+            # data = json.loads(response)
+            #if type(response) == str:
+            data = ast.literal_eval(data)
+            print(json.dumps(data, indent=4, sort_keys=False))
+        except Exception as e:
+            print("error:")
+            print(e)
+            return False
+
+        if "outputActive" in data:
+            return data["outputActive"]
+
+        if "studioModeEnabled" in data:
+            return data["studioModeEnabled"]
+
+        if "inputMuted" in data:
+            return data["inputMuted"]
+
+        return False
+
+
+    async def getCurrentValues(self, obsData, midiDeviceInfo):
+
+        midi = obsMidi.MidiSettings(None)
+        buttonStatus = []
+
+        midi.midiReset(midiDeviceInfo["midiOutputDevice"])
+
+        # print(json.dumps(obsData, indent=4, sort_keys=False))
+        # print(json.dumps(midiDeviceInfo, indent=4, sort_keys=False))
+
+        for m in obsData:
+            if m["section"] == "controls" and m["buttonID"] >= 0:
+
+                # print(json.dumps(m, indent=4, sort_keys=False))
+
+                action = self.toggleToGet(m["action"])
+                if action:
+                    data = { "section": m["section"], "name": m["name"],
+                             "action": action, "deviceType": m["deviceType"],
+                             "buttonValue": m["buttonValue"]}
+
+                    val = await self.doButtonAction(data, None) # midiVal)
+
+                    # print(json.dumps(data, indent=4, sort_keys=False))
+                    # print(json.dumps(val, indent=4, sort_keys=False))
+
+                    midiVal = midi.MIDIvalue()
+                    midiVal.status = "button"
+                    midiVal.channel = midiDeviceInfo["midiChannel"]
+                    midiVal.control = m["buttonID"]
+                    midiVal.value = self.getValFromResponse(val)
+                    buttonStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
+
             if m["deviceType"] == "audio":
                 volume = await self.getInputVolume(m["name"])
                 m["changeValue"] = volume
+
+                midiVal = midi.MIDIvalue()
+                midiVal.status = "change"
+                midiVal.channel = midiDeviceInfo["midiChannel"]
+                midiVal.control = m["changeID"]
+                midiVal.value = volume
+                await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
 
                 mute = await self.makeToggleRequest("GetInputMute", {"inputName": m["name"]})
                 # print(str(mute))
                 m["buttonValue"] = self.boolToInt(mute["inputMuted"])
 
-                # print(json.dumps(m, indent=4, sort_keys=False))
+                midiVal = midi.MIDIvalue()
+                midiVal.status = "button"
+                midiVal.channel = midiDeviceInfo["midiChannel"]
+                midiVal.control = m["buttonID"]
+                midiVal.value = mute["inputMuted"]
+                buttonStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
 
-        return midiConfig 
+        return buttonStatus, obsData
+
+    async def obsTest(self, wsAddress, wsPort, wsPassword):
+
+        obs = obsControls.ObsControls(self.config, None)
+
+        err, obsSocket = obs.websocketTestConnect(wsAddress, wsPort, wsPassword)
+        if err:
+            return True, err
+
+        try:
+            await obsSocket.connect()               # Make the connection to obs-websocket
+            await obsSocket.wait_until_identified() # Wait for the identification handshake to complete
+        except:
+            return True, "error: Cannot connect to OBS: {}".format(sys.exc_info()[1])
+
+        # print(obsSocket)
+
+        error, response = await self.makeRequest(obsSocket, "GetVersion", None)
+        if error:
+            return True, response
+
+        if not "obsWebSocketVersion" in response:
+            await obsSocket.disconnect() 
+            return True, "expected Websocket version not found in response"
+        
+        await obsSocket.disconnect() 
+        wsVersion = response["obsWebSocketVersion"]
+        obsVersion = response["obsVersion"]
+        return False, f"OK, OBS Version: {obsVersion}, obs-Websocket Version: {wsVersion}"

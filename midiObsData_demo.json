@@ -1,12 +1,14 @@
 {
     "midiDevice": "X-TOUCH MINI 0",
+    "midiOutputDevice": "X-TOUCH MINI 1",
     "midiConfigured": 1,
+    "midiChannel": 10,
     "midiConfiguration": [
         {
             "section": "controls",
             "action": "StartRecord",
             "name": "Start Recording",
-            "buttonID": 23,
+            "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
             "changeValue": 0,
@@ -88,7 +90,7 @@
             "section": "controls",
             "action": "ToggleVirtualCam",
             "name": "Toggle Virtual Camera",
-            "buttonID": 22,
+            "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
             "changeValue": 0,
@@ -128,22 +130,11 @@
             "section": "controls",
             "action": "SetStudioModeEnabled",
             "name": "Toggle Studio Mode",
-            "buttonID": -1,
+            "buttonID": 9,
             "changeID": -1,
-            "buttonValue": 0,
+            "buttonValue": 1,
             "changeValue": 0,
-            "deviceType": ""
-        },
-        {
-            "section": "sources",
-            "action": "Audio Input Capture",
-            "name": "Audio Input Capture",
-            "buttonID": 0,
-            "changeID": 1,
-            "buttonValue": 0,
-            "changeValue": 83,
-            "deviceType": "audio",
-            "changeLastVal": 83,
+            "deviceType": "",
             "buttonLastVal": 0,
             "buttonLastValue": 1
         },
@@ -151,10 +142,23 @@
             "section": "sources",
             "action": "WebCam Audio",
             "name": "WebCam Audio",
+            "buttonID": 0,
+            "changeID": 1,
+            "buttonValue": 0,
+            "changeValue": 97,
+            "deviceType": "audio",
+            "changeLastVal": 96,
+            "buttonLastVal": 0,
+            "buttonLastValue": 1
+        },
+        {
+            "section": "sources",
+            "action": "Audio Input Capture",
+            "name": "Audio Input Capture",
             "buttonID": -1,
             "changeID": -1,
             "buttonValue": 0,
-            "changeValue": 100,
+            "changeValue": 97,
             "deviceType": "audio"
         },
         {
@@ -173,11 +177,9 @@
             "name": "WebCam",
             "buttonID": 16,
             "changeID": -1,
-            "buttonValue": 1,
+            "buttonValue": 0,
             "changeValue": 0,
-            "deviceType": "",
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "deviceType": ""
         },
         {
             "section": "scenes",
@@ -185,11 +187,9 @@
             "name": "Chrome",
             "buttonID": 17,
             "changeID": -1,
-            "buttonValue": 1,
+            "buttonValue": 0,
             "changeValue": 0,
-            "deviceType": "",
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "deviceType": ""
         },
         {
             "section": "scenes",
@@ -197,11 +197,9 @@
             "name": "Desktop",
             "buttonID": 18,
             "changeID": -1,
-            "buttonValue": 1,
+            "buttonValue": 0,
             "changeValue": 0,
-            "deviceType": "",
-            "buttonLastVal": 0,
-            "buttonLastValue": 1
+            "deviceType": ""
         }
     ]
 }

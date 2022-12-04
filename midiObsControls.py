@@ -34,6 +34,18 @@ class ObsControls(object):
         self.midiObsJSON = midiObsJSON
         return
 
+    def websocketTestConnect(self, wsAddress, wsPort, wsPassword):
+        parameters = simpleobsws.IdentificationParameters(ignoreNonFatalRequestChecks = False)         
+        cs = "ws://{0}:{1}".format(wsAddress, wsPort)
+        try:
+            obsSocket = simpleobsws.WebSocketClient(url = cs, 
+                                    password = wsPassword, 
+                                    identification_parameters = parameters)
+        except:
+            return True, "cannot make socket client connection string"
+
+        return False, obsSocket
+
     def websocketConnect(self):
 
         parameters = simpleobsws.IdentificationParameters(ignoreNonFatalRequestChecks = False)         
