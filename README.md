@@ -1,7 +1,9 @@
 # midiObsWS
 An interface to allow OBS to be controlled by a MIDI device using Websockets.
 
-This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and 
+This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera.
+
+**Version 0.1 beta - December 2022**
 
 Written in Python 3.9, use OBS v28 or higher this comes with obs-websockets included.
 
@@ -13,6 +15,7 @@ I've tested this in a Windows 11 PC. It should work with a MAC but I had problem
 python -m pip install mido python-rtmidi websocket-client argparse simpleobsws pysimplegui
 ```
 ### Apple Mac (macOS Ventura)
+Getting it working proved to be more difficult than it should have been, I suspect milage may vary for others.
 ```
 $sudo port install rtmidi
 ```
