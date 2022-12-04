@@ -35,7 +35,11 @@ In OBS setup the Websocket - Tools > obs-websocket Settings. Enable authenticati
 
 Start midiObsWS with **python midiObsWS.py**
 
-When first run, the system connects to OBS to obtain the configuratiuon and you will then be presented with the setup page:
+When first run, the system will ask you for the obs-websocket server settings:
+
+<img width="546" alt="midiObsWS_host" src="https://user-images.githubusercontent.com/1898711/205472029-6b606325-aed0-480a-968e-970b7e6dd658.png">
+
+Enter the details and click Save and Close, the password is stored in plain text in the _midiObsConfig.json_ file, the system then connects to OBS to obtain the configuration and you will then be presented with the setup page, otherwise if there is an error describing the problem, if it is a password error, start again with **python midiObsWS.py --sethost**.
 
 <img width="725" alt="midiObsWS_setup" src="https://user-images.githubusercontent.com/1898711/205466660-bcf82571-3b88-43f0-ae47-b2d114d2bf90.png">
 
@@ -48,7 +52,7 @@ Click Save and Close, you will be taken to the main screen, this is where the pr
 You can now press buttons and twiddle knobs. Enjoy.
 
 ## Known Issues
-- The Server Setting screen is a bit pointless at the moment, you can only get to it if the system is properly configured.
+- The password being stored in plain text.
 - If you reconfigure OBS this won't pick up the change. You will need to delete the midiObsData.json file and configure again from start.
 - No checks are mode for duplicate numbers - the same MIDI control can be attached to multiple controls.
 - The GUI is a bit old fashioned, this is an attempt to have an interface that will work on multiple platforms and be reasonably simple. Maybe I should learn Node.JS.
