@@ -17,15 +17,16 @@ python -m pip install mido python-rtmidi websocket-client argparse simpleobsws p
 ### Apple Mac (macOS Ventura)
 Getting it working proved to be more difficult than it should have been, I suspect milage may vary for others.
 ```
-$sudo port install rtmidi
+$ sudo python -m pip install mido python-rtmidi websocket-client argparse simpleobsws pysimplegui
+$ sudo port install rtmidi
 ```
 if python-rtmidi says cannot find jack.h, try:
 ```
-$sudo python -m pip install python-rtmidi --install-option="--no-jack"
+$ sudo python -m pip install python-rtmidi --install-option="--no-jack"
 ```
 If you see an error, No Module named '__tkinter'
 ```
-$sudo port install py-tkinter tk +quartz
+$ sudo port install py-tkinter tk +quartz
 ```
 ## Use
 Start OBS and configure your video, audio and scenes to how you like. Connect your MIDI device to a USB port.
