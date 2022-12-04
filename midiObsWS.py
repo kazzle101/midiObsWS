@@ -53,7 +53,7 @@ linux (debian bullseye)
 
 _scriptDir = os.path.dirname(os.path.realpath(__file__))
 _scriptLogging = os.path.join(_scriptDir, "midiObsDebug.log")
-_midiObsJSONfilename = "midiObsConfig.json"
+_midiObsJSONConfigFile = "midiObsConfig.json"
 _midiObsData = {}
 
 import midiObsMidiSetup as obsMidiSetup
@@ -81,6 +81,21 @@ def filterOutVideoDevices(data):
 
     return data
 
+def setupHost(config):
+
+    display = obsDisplay.ObsDisplay(config, None, None, None)
+    exitAction, config = display.showHostSetupGUI(_midiObsJSONConfigFile)
+    if exitAction == "error":
+        display.showErrorGUI(f"{config}")
+        sys.exit(0)
+    if exitAction == "exit":
+        sys.exit(0)
+
+    config["scriptDir"] = _scriptDir
+    config["scriptLogging"] = _scriptLogging
+    return config
+
+
 def main():
     global _midiObsData
 
@@ -97,6 +112,7 @@ def main():
     parser.add_argument("-j", "--jsonfile", type=str, help="load a midi settings json file")
     parser.add_argument("-c", "--jsoncfgfile", type=str, help="load a json configuration file")        
     parser.add_argument("-t", "--testobs", action='store_true', help="run the test OBS script")      
+    parser.add_argument("-s", "--sethost", action='store_true', help="set the obs-websocket hostname and password")  
     parser.add_argument("-v", "--wsver", action='store_true', help="get version number of OBS Websockets")
     parser.add_argument("-k", "--inputkinds", action='store_true', help="list inputs attached to OBS")
     parser.add_argument("--getsetlist", action='store_true', help="list get set and other options")
@@ -104,17 +120,17 @@ def main():
     args = parser.parse_args()
 
     if args.jsoncfgfile:
-        error, midiObsJSON = fileSettings.loadJsonFile(args.jsonCfgfile)
+        error, midiObsConfig = fileSettings.loadJsonFile(args.jsonCfgfile)
     else:
-        error, midiObsJSON = fileSettings.loadJsonFile(_midiObsJSONfilename)
+        error, midiObsConfig = fileSettings.loadJsonFile(_midiObsJSONConfigFile)
 
     if error:
         display = obsDisplay.ObsDisplay(config, None, None, None)
-        display.showErrorGUI(midiObsJSON)           
-        print(f"json config data not loaded: {midiObsJSON}")
+        display.showErrorGUI(midiObsConfig)           
+        print(f"json config data not loaded: {midiObsConfig}")
         sys.exit(0)       
 
-    config = midiObsJSON.pop("config")
+    config = midiObsConfig.pop("config")
     config["scriptDir"] = _scriptDir
     config["scriptLogging"] = _scriptLogging
 
@@ -133,8 +149,14 @@ def main():
         sys.exit(0)     
 
     midiLoadError, _midiObsData = fileSettings.loadJsonFile(midiObsFile)
-    
-    controls = obsControls.ObsControls(config, midiObsJSON)
+
+    if args.sethost:
+        config = setupHost(config)
+
+    if not "hostSet" in config or config["hostSet"] == 0:
+        config = setupHost(config)
+
+    controls = obsControls.ObsControls(config, midiObsConfig)
 
     if args.getsetlist:
         controls.makeGetSetList()
@@ -159,7 +181,7 @@ def main():
         display = obsDisplay.ObsDisplay(config, None, None, None)
         if inputsAndScenes == "cannot connect":
             print("Cannot connect, proably need to set the password in the midiObsConfig.json file")
-            display.showErrorGUI("Cannot connect, proably need to set the password in the midiObsConfig.json file")
+            display.showErrorGUI("Cannot connect, proably need to set the password, use: python .\midiObsWS.py --sethost")
             sys.exit(0)
         else:
             display.showErrorGUI(f"OBS not Running or OBS-Websocket not installed,\n{inputsAndScenes}")
@@ -180,7 +202,7 @@ def main():
             err = midiCheck
 
         print(f"json midi data file not loaded: {err}, creating default")
-        _midiObsData = fileSettings.makeDefaultMidiObsData(midiObsJSON, inputsAndScenes, midiDevices)
+        _midiObsData = fileSettings.makeDefaultMidiObsData(midiObsConfig, inputsAndScenes, midiDevices)
         error, message = fileSettings.saveJSONfile(config["midiObsPath"],config["midiObsFile"],_midiObsData)
         if error:
             display = obsDisplay.ObsDisplay(config, None, None, None)
@@ -192,13 +214,13 @@ def main():
 
     ## remove references to video 
     _midiObsData["midiConfiguration"] = filterOutVideoDevices(_midiObsData["midiConfiguration"])
-    midiObsJSON["inputKinds"]["video"] = []
+    midiObsConfig["inputKinds"]["video"] = []
     inputsAndScenes["GetInputList"]["inputs"] = filterOutVideoDevices(inputsAndScenes["GetInputList"]["inputs"])
 
     # print(json.dumps(inputsAndScenes, indent=4, sort_keys=False))
     # sys.exit()
 
-    display = obsDisplay.ObsDisplay(config, midiObsJSON, _midiObsData, obsSocket)
+    display = obsDisplay.ObsDisplay(config, midiObsConfig, _midiObsData, obsSocket)
 
     # print(json.dumps(midiObsJSON, indent=4, sort_keys=False))
     # sys.exit()
@@ -221,7 +243,7 @@ def main():
                 sys.exit(0)
 
         elif exitAction == "host":
-            exitAction, config = display.showHostSetupGUI(config, midiObsJSON)
+            exitAction, config = display.showHostSetupGUI(_midiObsJSONConfigFile)
             if exitAction == "error":
                 display.showErrorGUI(f"{config}")
                 sys.exit(0)

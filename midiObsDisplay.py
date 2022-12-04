@@ -450,9 +450,16 @@ class ObsDisplay(object):
         await obsSocket.disconnect()
         return exitAction, False
 
-    def showHostSetupGUI(self, config, midiObsJSON):
+    def showHostSetupGUI(self, midiObJSONConfigFile):
         fileSettings = obsJSONsetup.JsonFileSettings(self.scriptLogging)
 
+        filename = os.path.join(self.config["midiObsPath"],midiObJSONConfigFile)
+        error, obsConfig = fileSettings.loadJsonFile(filename)
+        if error:
+            exitAction = "error"
+            return exitAction, obsConfig
+
+        config = obsConfig["config"]
         updated = False
 
         # print("--- midiObsJson ---")
@@ -500,17 +507,21 @@ class ObsDisplay(object):
         # print(json.dumps(config, indent=4, sort_keys=False))
 
         if updated:
-            midiObsJSON["config"]["wsAddress"] = config["wsAddress"]
-            midiObsJSON["config"]["wsPort"] = config["wsPort"]
-            midiObsJSON["config"]["wsPassword"] = config["wsPassword"]
-            midiObsJSON["config"]["midiObsPath"] = config["midiObsPath"]
-            midiObsJSON["config"]["midiObsFile"] = config["midiObsFile"]
+            obsConfig["config"] = {}
+            obsConfig["config"]["hostSet"] = 1
+            obsConfig["config"]["wsAddress"] = config["wsAddress"]
+            obsConfig["config"]["wsPort"] = config["wsPort"]
+            obsConfig["config"]["wsPassword"] = config["wsPassword"]
+            obsConfig["config"]["midiObsPath"] = self.config["midiObsPath"]
+            obsConfig["config"]["midiObsFile"] = self.config["midiObsFile"]
 
-            error, message = fileSettings.saveJSONfile(config["midiObsPath"],config["midiObsFile"],midiObsJSON)
+            error, message = fileSettings.saveJSONfile(self.config["midiObsPath"], midiObJSONConfigFile, obsConfig)
             if error:
                 exitAction = "error"
                 config = message
 
+        config["midiObsPath"] = self.config["midiObsPath"]
+        config["midiObsFile"] = self.config["midiObsFile"]
         return exitAction, config
 
     def showErrorGUI(self, error):

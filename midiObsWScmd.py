@@ -142,7 +142,10 @@ class ObsWScmd(object):
         # print(json.dumps(midiData, indent=4, sort_keys=False))
 
         if midiData["section"] == "controls":
-            response = await self.makeToggleRequest(midiData["action"])
+            if midiData["action"] == "SetStudioModeEnabled":
+                response = await self.makeToggleRequest("SetStudioModeEnabled", midiData["buttonValue"]) 
+            else:
+                response = await self.makeToggleRequest(midiData["action"])
 
         if midiData["section"] == "sources" and midiData["deviceType"] == "audio":
             response = await self.makeToggleRequest("ToggleInputMute", {"inputName": midiData["name"]})
