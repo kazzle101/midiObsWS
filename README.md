@@ -7,7 +7,7 @@ This system has been written to provide basic functionality; scene switching, vo
 
 Written in Python 3.9, use OBS v28 or higher as this comes with obs-websockets 5 included.
 
-I've tested this in a Windows 11 PC. It should work with a MAC but I had problems getting tkinter installed, it should also work with Liunx distributions that have OBS 28 installed. The MIDI device I've used is a Behringer X-Touch Midi.
+I've tested this in a Windows 11 PC. It should work with a MAC but I had problems getting tkinter installed, it should also work with Liunx distributions that have OBS 28 installed. The MIDI device I've used is a Behringer X-Touch Mini.
 
 ## Installation
 ### Windows (with python 3.9 already installed)
