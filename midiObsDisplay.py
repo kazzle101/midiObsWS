@@ -354,6 +354,7 @@ class ObsDisplay(object):
         self.midiObsData = midiObsData
         midiDevice = midiObsData["midiDevice"]
         buttonStatus = []
+        midiDeviceInfo = self.getMidiDeviceInfo(self.midiObsData)
 
         controls = obsControls.ObsControls(self.config, self.midiObsJSON)
         obsSocket = controls.websocketConnect()     # send the connection string
@@ -374,9 +375,9 @@ class ObsDisplay(object):
 
         exitAction = "close"
         midiSetup = obsMidiSetup.MidiSettings(self.config)
-        obsCmd = obsWScmd.ObsWScmd(self.config, obsSocket)
+        obsCmd = obsWScmd.ObsWScmd(self.config, obsSocket, midiDeviceInfo)
 
-        midiDeviceInfo = self.getMidiDeviceInfo(self.midiObsData)
+        # midiDeviceInfo = self.getMidiDeviceInfo(self.midiObsData)
         obsData = midiObsData["midiConfiguration"]
         buttonStatus, obsData = await obsCmd.getCurrentValues(obsData, midiDeviceInfo)
         exitFromMidi = False
@@ -432,13 +433,13 @@ class ObsDisplay(object):
     
                         if midiVal.status == "button":
                             if midiData["buttonLastVal"] != midiData["buttonValue"]:
-                                response = await obsCmd.doButtonAction(midiData, midiVal)
+                                response, buttonStatus = await obsCmd.doButtonAction(midiData, midiVal, buttonStatus)
                                 midiData["buttonLastValue"] = midiData["buttonValue"]
                                 obsData[index] = midiData
 
                         if midiVal.status == "change":
                             if midiData["changeLastVal"] != midiData["changeValue"]:
-                                response = await obsCmd.doChangeAction(midiData, midiVal)
+                                response, buttonStatus = await obsCmd.doChangeAction(midiData, midiVal, buttonStatus)
                                 midiData["changeLastVal"] = midiData["changeValue"]
                                 obsData[index] = midiData
 
@@ -475,7 +476,6 @@ class ObsDisplay(object):
         fileSettings = obsJSONsetup.JsonFileSettings(self.scriptLogging)
         obsMidi = obsMidiSetup.MidiSettings(None)
    
-
         filename = os.path.join(self.config["midiObsPath"], midiObsDataFile)
         error, obsData = fileSettings.loadJsonFile(filename)
         if error:
@@ -490,12 +490,14 @@ class ObsDisplay(object):
 
         config = obsConfig["config"]
         config["scriptLogging"] = None
-        obsCmd = obsWScmd.ObsWScmd(config, None)
+        obsCmd = obsWScmd.ObsWScmd(config, None, None)
         
         updated = False
 
         err, midiInputs = obsMidi.listMidiDevices()
         err, midiOutputs = obsMidi.listMidiOutputDevices()
+
+        midiOutputs.insert(0, "not set")
 
         # print("--- midiObsJson ---")
         # print(json.dumps(midiObsJSON, indent=4, sort_keys=False))
@@ -524,8 +526,8 @@ class ObsDisplay(object):
         midiLayout.append([sg.Text("Midi In:", size=(15)), sg.Combo(key="midiIn", enable_events=True, size=(30), values=midiInputs)])  
         midiLayout.append([sg.Text("Midi Out:", size=(15)), sg.Combo(key="midiOut", enable_events=True, size=(30), values=midiOutputs)])  
         midiLayout.append([sg.Text('Midi Out is used to add some feedback to your Midi Device, light up the button LEDs')])
-        midiLayout.append(
-            [sg.Text("Midi Channel:", size=(15)), sg.In(key="midiChannel", enable_events=True, size=(5)),
+        midiLayout.append([
+            sg.Text("Midi Channel:", size=(15)), sg.In(key="midiChannel", enable_events=True, size=(5)),
             sg.Button("Set Midi Channel"),
             sg.Text("", key="midiChannelInfo")
         ]) 
@@ -574,10 +576,10 @@ class ObsDisplay(object):
                 channelSelected = False
                 midiIn = values["midiIn"]
                 channel = int(values["midiChannel"])
-                if midiIn == "":
+                if not midiIn or midiIn == "":
                     continue
 
-                window.Element("midiChannelInfo").update(value="press a button on the midi device")
+                window.Element("midiChannelInfo").update(value="press any button on the midi device")
                 with mido.open_input(midiIn) as inMidi:
                     ## clear anything already in the midi input buffer
                     while inMidi.receive(block=False) is not None:
@@ -622,9 +624,13 @@ class ObsDisplay(object):
                 config["wsPassword"] = values["wsPassword"].strip()
 
                 obsData["midiDevice"] = values["midiIn"]
-                obsData["midiOutputDevice"] = values["midiOut"]
+                if values["midiOut"] == "not set":
+                    obsData["midiOutputDevice"] = ""
+                else:
+                    obsData["midiOutputDevice"] = values["midiOut"]
+
                 obsData["midiChannel"] = int(values["midiChannel"])
-                obsData["midiConfigured"] = 1
+                obsData["midiConfigured"] = 0 # this gets set to 1 when some button actions have been setup in showMidiSetupGUI
                 break
 
             # window.Element("midiChannel").update(value=self.limitMidiChannels(str(values["midiChannel"])))

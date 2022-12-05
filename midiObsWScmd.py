@@ -20,29 +20,20 @@ import midiObsMidiSetup as obsMidi
 
 class ObsWScmd(object):
 
-    def __init__(self, config, obsSocket):
+    def __init__(self, config, obsSocket, midiDeviceInfo):
         self.config = config
         # self.midiObsJSON = midiObsJSON
         # self.midiObsData = midiObsData
+        self.midiDeviceInfo = midiDeviceInfo
         self.obsSocket = obsSocket
         self.wsAddress = config["wsAddress"]
         self.wsPort = config["wsPort"]
         self.wsPassword = config["wsPassword"]
         self.scriptLogging = config["scriptLogging"]
 
-    # def websocketConnect(self, wsAddress, wsPort, wsPassword):
-
-    #     parameters = simpleobsws.IdentificationParameters(ignoreNonFatalRequestChecks = False)         
-    #     cs = "ws://{0}:{1}".format(wsAddress, wsPort)
-    #     obsSocket = simpleobsws.WebSocketClient(url = cs, password = wsPassword, 
-    #                                             identification_parameters = parameters)
-
-    #     return obsSocket
-
     async def websocketDisconnect(self):
         await self.obsSocket.disconnect() 
         return "ok"
-
 
     # https://www.theamplituhedron.com/articles/How-to-replicate-the-Arduino-map-function-in-Python-for-Raspberry-Pi/
     def rangeMap(self, x, in_min, in_max, out_min, out_max):
@@ -147,7 +138,8 @@ class ObsWScmd(object):
         e, r = await self.makeRequest(self.obsSocket, rType, rData)
         return r
 
-    async def doButtonAction(self, midiData, midiVal):
+    async def doButtonAction(self, midiData, midiVal, buttonStatus):
+
         response = None
         # print("-- doButtonAction pressed --")
         # print(json.dumps(midiData, indent=4, sort_keys=False))
@@ -164,9 +156,11 @@ class ObsWScmd(object):
         if midiData["section"] == "scenes":
             response = await self.makeToggleRequest("SetCurrentProgramScene", {"sceneName": midiData["name"] })
 
-        return str(response)
+        buttonStatus = await self.setMidiOutputLED(midiVal, buttonStatus)
 
-    async def doChangeAction(self, midiData, midiVal):
+        return str(response), buttonStatus
+
+    async def doChangeAction(self, midiData, midiVal, buttonStatus):
         response = None
         # print("-- doChangeAction twiddled --")
         # print(json.dumps(midiData, indent=4, sort_keys=False))
@@ -174,7 +168,23 @@ class ObsWScmd(object):
         if midiData["deviceType"] == "audio":
             response = await self.setInputVolume(midiData["name"], midiData["changeValue"], db=True)
 
-        return str(response)
+        buttonStatus = await self.setMidiOutputLED(midiVal, buttonStatus)
+
+        return str(response), buttonStatus
+
+    async def setMidiOutputLED(self, midiVal, buttonStatus):
+        midi = obsMidi.MidiSettings(None)
+
+        if self.midiDeviceInfo == None:
+            return buttonStatus
+
+        if midiVal == None:
+            return buttonStatus
+
+        midiOut = self.midiDeviceInfo["midiOutputDevice"]
+        buttonStatus = await midi.setMidiDeviceKey(midiOut, midiVal, buttonStatus)        
+        return buttonStatus
+
 
     def toggleToGet(self, toggleAction):
 
@@ -189,9 +199,9 @@ class ObsWScmd(object):
     def getValFromResponse(self, data):
         # p = re.compile('(?<!\\\\)\'')
 
-        print("getValFromResponse")
-        print(type(data))
-        print(data)
+        # print("getValFromResponse")
+        # print(type(data))
+        # print(data)
 
 
         try:
@@ -202,7 +212,7 @@ class ObsWScmd(object):
             # data = json.loads(response)
             #if type(response) == str:
             data = ast.literal_eval(data)
-            print(json.dumps(data, indent=4, sort_keys=False))
+            # print(json.dumps(data, indent=4, sort_keys=False))
         except Exception as e:
             print("error:")
             print(e)
@@ -224,7 +234,8 @@ class ObsWScmd(object):
 
         midi = obsMidi.MidiSettings(None)
         buttonStatus = []
-
+        changeStatus = []
+        bs = []
         midi.midiReset(midiDeviceInfo["midiOutputDevice"])
 
         # print(json.dumps(obsData, indent=4, sort_keys=False))
@@ -241,7 +252,7 @@ class ObsWScmd(object):
                              "action": action, "deviceType": m["deviceType"],
                              "buttonValue": m["buttonValue"]}
 
-                    val = await self.doButtonAction(data, None) # midiVal)
+                    val, bs = await self.doButtonAction(data, None, bs) # midiVal)
 
                     # print(json.dumps(data, indent=4, sort_keys=False))
                     # print(json.dumps(val, indent=4, sort_keys=False))
@@ -262,7 +273,7 @@ class ObsWScmd(object):
                 midiVal.channel = midiDeviceInfo["midiChannel"]
                 midiVal.control = m["changeID"]
                 midiVal.value = volume
-                await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
+                changeStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, changeStatus)
 
                 mute = await self.makeToggleRequest("GetInputMute", {"inputName": m["name"]})
                 # print(str(mute))

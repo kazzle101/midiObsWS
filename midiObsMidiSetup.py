@@ -64,10 +64,10 @@ class MidiSettings:
 
         if midiVal.status == "button" and midiVal.value == 0:
             if midiVal.control in buttonStatus:
-                msg = mido.Message('note_off', channel=midiVal.channel, note=midiVal.control) 
+                msg = mido.Message('note_on', channel=midiVal.channel, note=midiVal.control) 
                 buttonStatus.remove(midiVal.control)
             else:
-                msg = mido.Message('note_on', channel=midiVal.channel, note=midiVal.control) 
+                msg = mido.Message('note_off', channel=midiVal.channel, note=midiVal.control) 
                 buttonStatus.append(midiVal.control)
         
             with mido.open_output(midiOutputDevice) as outMidi:

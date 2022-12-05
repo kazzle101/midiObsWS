@@ -94,7 +94,7 @@ def setupHost(config, obsData):
 
     config["scriptDir"] = _scriptDir
     config["scriptLogging"] = _scriptLogging
-    return config, obsData
+    return config, obsData, exitAction
 
 
 def main():
@@ -104,6 +104,7 @@ def main():
     config = {}
     config["scriptDir"] = _scriptDir
     config["scriptLogging"] = _scriptLogging
+    exitAction = ""
 
     fileSettings = obsJSONsetup.JsonFileSettings(_scriptLogging)
 
@@ -142,10 +143,10 @@ def main():
     midiLoadError, _midiObsData = fileSettings.loadJsonFile(midiObsFile)
 
     if args.sethost:
-        config, _midiObsData = setupHost(config, _midiObsData)
+        config, _midiObsData, exitAction = setupHost(config, _midiObsData)
 
     if not "hostSet" in config or config["hostSet"] == 0:
-        config, _midiObsData = setupHost(config, _midiObsData)
+        config, _midiObsData, exitAction = setupHost(config, _midiObsData)
 
     controls = obsControls.ObsControls(config, midiObsConfig)
 
@@ -216,7 +217,7 @@ def main():
     # print(json.dumps(midiObsJSON, indent=4, sort_keys=False))
     # sys.exit()
 
-    exitAction = ""
+    # exitAction = ""
     if _midiObsData["midiConfigured"] == 0:
         exitAction = "setup"
 
