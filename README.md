@@ -31,15 +31,13 @@ $ sudo port install py-tkinter tk +quartz
 ## Use
 Start OBS and configure your video, audio and scenes to how you like. Connect your MIDI device to a USB port.
 
-In OBS setup the Websocket - Tools > obs-websocket Settings. Enable authentication and generate a password. Click the Show Connect Info button for the login infomration, if you are running midiObsWS on the same computer as OBS _localhost_ can be used as the Server IP. The server IP, host and password should be copied in to the config section in the **midiObsConfig.json** file.
+In OBS setup the Websocket - Tools > obs-websocket Settings. Enable authentication and generate a password. Click the Show Connect Info button for the login infomration, if you are running midiObsWS on the same computer as OBS _localhost_ can be used as the Server IP.
 
-Start midiObsWS with **python midiObsWS.py**
-
-When first run, the system will ask you for the obs-websocket server settings and the midi device you will be using to control, OBS shoud be running and the misdi device connected:
+Start midiObsWS with **python midiObsWS.py** When first run, the system will ask you for the obs-websocket server settings and the midi device you will be using as a controller, OBS shoud be running and the misdi device connected:
 
 <img width="546" alt="midiObsWS_host" src="https://user-images.githubusercontent.com/1898711/205518626-77c082fc-8efd-46a9-9bd2-68c4f782189b.png">
 
-You can test the OBS connection by clicking the test button, on success it'll say OK and give you the version numbers of OB and obs-websockets.
+You can test the OBS connection by clicking the test button, on success it'll say OK and give you the version numbers of OBS and obs-websockets.
 
 Enter the details and click Save and Close, the password is stored in plain text in the _midiObsConfig.json_ file, the system then connects to OBS to obtain the configuration and you will then be presented with the setup page, otherwise if there is an error describing the problem, if it is a password error, start again with **python midiObsWS.py --sethost**.
 
