@@ -1,2 +1,0 @@
-python midiObsWS.bat
-pause
