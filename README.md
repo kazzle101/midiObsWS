@@ -67,17 +67,15 @@ Two files are created; _midiObsConfig.json_ this contains your OBS login details
 
 You can test the OBS connection by clicking the _Test OBS Connection_ button, on success it'll say OK and give you the version numbers for OBS and obs-websockets.
 
-Enter the details and click Save and Close, the password is stored in plain text in the _midiObsConfig.json_ file, the system then connects to OBS to obtain the configuration and you will then be presented with the setup page, otherwise if there is an error describing the problem, if it is a password error, start again with **python midiObs.py --sethost**.
+Enter the details and click _Save and Close_, the password is stored in plain text in the _midiObsConfig.json_ file, the system then connects to OBS to obtain the configuration and you will then be presented with the setup page, otherwise an error describing the problem will be shown.
 
 <img width="725" alt="midiObsWS_setup" src="https://user-images.githubusercontent.com/1898711/205466660-bcf82571-3b88-43f0-ae47-b2d114d2bf90.png">
 
-To attach a MIDI control to an OBS action, just click in the text box and press a button or twiddle a knob on your MIDI device. For the controls in section one, you probably want the Toggle options, rather than assigning different on/off keys, the scenes are expecting a button press, and the audio inputs have two options one for a push button to toggle mute the sound and another to adjust the volume.
-
-Click _Save and Close_, you will be taken to the main controller screen, this is where the program operates OBS via the websocket:
+To attach a MIDI control to an OBS action, just click in the text box for the control you wish to set and press a button or twiddle a knob on your MIDI device. For the controls in section one, you probably want the Toggle options, rather than assigning different on/off keys. In section two the scenes are expecting a button press to switch between them, and in section three the audio inputs have two options one for a push button to toggle mute the sound and another to adjust the volume. Click _Save and Close_, you will be taken to the main controller screen, this is where the program operates OBS via the websocket:
 
 <img width="545" alt="midiObsWS_main" src="https://user-images.githubusercontent.com/1898711/205467030-e01141aa-e4a7-45a5-83ec-ea2cdcf3f62d.png">
 
-Once fully configured, starting the program again will be take you directly to the contoller page, and on startup the midi device will be set to the values currently in OBS, button LED's will be set on where things are active, and indicators for the volume knobs set appropriatley.
+Once fully configured, starting the program again will be take you directly to the contoller page, and on startup the midi device will be set to the values currently in OBS, button LED's will be set on where things are active, and indicators for the volume knobs set appropriatley. 
 
 You can now press buttons and twiddle knobs. Enjoy.
 
