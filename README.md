@@ -7,14 +7,20 @@ This system has been written to provide basic functionality; scene switching, vo
 **Version 0.6 beta**
 Tested with Python 3.11
 
-Many updates and bugfixes, mostly around creating the default configuration files without having to know how the system works, also moving around functions to help make the code a bit more readable. A Windows Standalone executable is now incuded in the dist folder, copy onto your PC somewhere suitable and double-click it. This was created with PyInstaller using:
+Many updates and bugfixes, mostly around creating default configuration files without having to know how the system works, also moving around functions to help make the code a bit more readable. Files have been moved around so pyinstaller installer can do its thing.
+
+## Installation
+Connect your MIDI input device and start and configure OBS before you launch midiObsWS otherwise it will just say you need to connect a MIDI device and Start OBS then exit.
+
+To configure OBS go to - Tools > obs-websocket Settings, enable Websocket server and generate a password, and click the Show Connect Info button for the login information.
+### Windows Executable
+A Windows Standalone executable is now incuded in the dist folder, copy onto your PC somewhere suitable and double-click it
+
+The executable was created with PyInstaller using:
 ```
 python -m PyInstaller '.\midiObs.py' --name midiObsWS -F 
 ```
-Connect your MIDI input device and start OBS before you launch midiObsWS otherwise it will just say you need to connect a MIDI device and Start OBS then exit.
-
-Files have been moved around so the installer can do its thing.
-
+### Traditional Setup
 The setup.py should work if you have python and setuptools already installed:
 ```
 git clone https://github.com/kazzle101/midiObsWS
