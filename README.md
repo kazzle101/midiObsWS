@@ -14,7 +14,7 @@ Connect your MIDI input device and start and configure OBS before you launch mid
 
 To configure OBS go to - Tools > obs-websocket Settings, enable Websocket server and generate a password, and click the Show Connect Info button for the login information.
 ### Windows Executable
-A Windows Standalone executable is now incuded in the dist folder, copy onto your PC somewhere suitable and double-click it
+A Windows Standalone executable is now incuded in the dist folder, copy onto your PC somewhere suitable and double-click it. <a href="https://github.com/kazzle101/midiObsWS/blob/main/dist/midiObsWS.exe" target="_blank">DOWNLOAD HERE</a>
 
 The executable was created with PyInstaller using:
 ```
