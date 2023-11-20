@@ -42,7 +42,7 @@ class ObsGUIsetupHost(object):
 
         # config = obsConfig["config"]
         # config["scriptLogging"] = None
-        obsCmd = ObsWScmd(config, None, None)
+        obsCmd = ObsWScmd(config, None, None, None)
         
         updated = False
 

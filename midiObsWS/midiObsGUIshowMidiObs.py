@@ -2,6 +2,7 @@ import PySimpleGUI as sg
 import sys
 import mido
 import time
+import json
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
@@ -46,9 +47,12 @@ class ObsGUIshowMidiObs(object):
         except:
             return "error", "No MIDI device attached"
 
+
+
         exitAction = "close"
         midiSetup = ObsMidiSettings(self.config)
-        obsCmd = ObsWScmd(self.config, obsSocket, midiDeviceInfo)
+        scenesSectionData = guiCommon.getSectionData(midiObsData,"scenes")
+        obsCmd = ObsWScmd(self.config, obsSocket, midiDeviceInfo, scenesSectionData)
 
         # midiDeviceInfo = guiCommon.getMidiDeviceInfo(self.midiObsData)
         obsData = midiObsData["midiConfiguration"]
@@ -105,11 +109,13 @@ class ObsGUIshowMidiObs(object):
                         # print(json.dumps(midiData, indent=4, sort_keys=False))
     
                         if midiVal.status == "button":
-                            if midiData["buttonLastVal"] != midiData["buttonValue"]:
+                            if midiData["section"] == "scenes":                                    
+                                response, buttonStatus = await obsCmd.doSceneChange(obsData, midiData, buttonStatus)
+                            else:
                                 response, buttonStatus = await obsCmd.doButtonAction(midiData, midiVal, buttonStatus)
-                                midiData["buttonLastValue"] = midiData["buttonValue"]
-                                obsData[index] = midiData
-
+                                    
+                            obsData[index] = midiData
+                                                    
                         if midiVal.status == "change":
                             if midiData["changeLastVal"] != midiData["changeValue"]:
                                 response, buttonStatus = await obsCmd.doChangeAction(midiData, midiVal, buttonStatus)

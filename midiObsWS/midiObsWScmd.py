@@ -1,6 +1,7 @@
 import sys
 import simpleobsws
 import ast
+import json
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
@@ -13,7 +14,7 @@ from midiObsWS.midiObsMidiSettings import ObsMidiSettings
 
 class ObsWScmd(object):
 
-    def __init__(self, config, obsSocket, midiDeviceInfo):
+    def __init__(self, config, obsSocket, midiDeviceInfo, scenesSectionData):
         self.config = config
         # self.midiObsJSON = midiObsJSON
         # self.midiObsData = midiObsData
@@ -23,9 +24,10 @@ class ObsWScmd(object):
         self.wsPort = config["wsPort"]
         self.wsPassword = config["wsPassword"]
         self.scriptLogging = config["scriptLogging"]
+        self.scenesSectionData = scenesSectionData
 
     async def websocketDisconnect(self):
-        await self.obsSocket.disconnect() 
+        await self.obsSocket.disconnect()
         return "ok"
 
     # https://www.theamplituhedron.com/articles/How-to-replicate-the-Arduino-map-function-in-Python-for-Raspberry-Pi/
@@ -49,7 +51,7 @@ class ObsWScmd(object):
         b = str(b).lower()
         if b in these:
             return 1
-        
+
         return 0
 
 
@@ -66,7 +68,7 @@ class ObsWScmd(object):
 
         try:
             ret = await obsSocket.call(request)
-            if ret.ok():             
+            if ret.ok():
                 response = ret.responseData
             else:
                 error = "single request failed, response data: {}".format(ret.responseData)
@@ -81,13 +83,13 @@ class ObsWScmd(object):
         # the response string is encapsulated with single quotes instead of doubles
         # so json.loads(response) won't work. ast.literal_eval fixes that.
 
-        # response = ast.literal_eval(response)        
+        # response = ast.literal_eval(response)
         # print(json.dumps(response, indent=4, sort_keys=False))
         return False, response
 
-    async def getInputVolume(self, source, db=True):    
+    async def getInputVolume(self, source, db=True):
         rType = "GetInputVolume"
-        rData = {"inputName": source} 
+        rData = {"inputName": source}
 
         e, r = await self.makeRequest(self.obsSocket, rType, rData)
 
@@ -114,7 +116,7 @@ class ObsWScmd(object):
 
         rType = "SetInputVolume"
         e, r = await self.makeRequest(self.obsSocket, rType, rData)
-    
+
         return r
 
     async def getInputList(self):
@@ -131,15 +133,38 @@ class ObsWScmd(object):
         e, r = await self.makeRequest(self.obsSocket, rType, rData)
         return r
 
+    async def doSceneChange(self, obsData, midiData, buttonStatus):
+        midi = ObsMidiSettings(None)
+        midiOutputDevice = self.midiDeviceInfo["midiOutputDevice"]
+        midiChannel = self.midiDeviceInfo["midiChannel"]
+
+        if midiOutputDevice is None:
+            return obsData, buttonStatus
+
+        if self.scenesSectionData is None:
+            return obsData, buttonStatus
+
+        # print("doSceneChange")
+        # print(midiData)
+        # print(buttonStatus)
+
+        # turn all scenes LEDs off
+        for o in obsData:
+            if o["section"] == "scenes" and o["buttonID"] > 0:
+                buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOutputDevice, midiChannel, o["buttonID"], buttonStatus, "off")
+
+        ## turn only the selected scene LED on
+        response = await self.makeToggleRequest("SetCurrentProgramScene", {"sceneName": midiData["name"] })
+        buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOutputDevice, midiChannel, midiData["buttonID"], buttonStatus, "on")
+
+        return str(response), buttonStatus
+
     async def doButtonAction(self, midiData, midiVal, buttonStatus):
 
         response = None
-        # print("-- doButtonAction pressed --")
-        # print(json.dumps(midiData, indent=4, sort_keys=False))
-
         if midiData["section"] == "controls":
             if midiData["action"] == "SetStudioModeEnabled":
-                response = await self.makeToggleRequest("SetStudioModeEnabled", midiData["buttonValue"]) 
+                response = await self.makeToggleRequest("SetStudioModeEnabled", midiData["buttonValue"])
             else:
                 response = await self.makeToggleRequest(midiData["action"])
 
@@ -175,7 +200,7 @@ class ObsWScmd(object):
             return buttonStatus
 
         midiOut = self.midiDeviceInfo["midiOutputDevice"]
-        buttonStatus = await midi.setMidiDeviceKey(midiOut, midiVal, buttonStatus)        
+        buttonStatus = await midi.setMidiDeviceKey(midiOut, midiVal, buttonStatus)
         return buttonStatus
 
 
@@ -305,10 +330,10 @@ class ObsWScmd(object):
             return True, response
 
         if not "obsWebSocketVersion" in response:
-            await obsSocket.disconnect() 
+            await obsSocket.disconnect()
             return True, "expected Websocket version not found in response"
-        
-        await obsSocket.disconnect() 
+
+        await obsSocket.disconnect()
         wsVersion = response["obsWebSocketVersion"]
         obsVersion = response["obsVersion"]
         return False, f"OK, OBS Version: {obsVersion}, obs-Websocket Version: {wsVersion}"

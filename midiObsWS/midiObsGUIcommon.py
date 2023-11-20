@@ -178,6 +178,19 @@ class ObsGUIcommon(object):
 
         return nameList
 
+    def getSectionData(self, midiData, thisSection):
+
+        section = []
+
+        if not "midiConfiguration" in midiData:
+            return section
+
+        for s in midiData["midiConfiguration"]:
+            if s["section"] == thisSection:
+                section.append(s)
+            
+        return section
+
     # not used
     def updateObsResponse(self, midiData, window, response, error):
 

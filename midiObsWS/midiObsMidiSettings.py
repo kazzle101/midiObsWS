@@ -75,6 +75,29 @@ class ObsMidiSettings:
                 break
 
         return midiConfig
+    
+    async def setMidiDeviceKeyOnOrOff(self, midiOutputDevice, midiChannel, buttonID, buttonStatus, onOff):
+
+        if buttonID < 1:
+            return buttonStatus
+        
+        # print("setMidiDeviceKeyOnOrOff", buttonID, onOff)
+    
+        if onOff == "on":
+            msg = mido.Message('note_on', channel=midiChannel, note=buttonID) 
+            if buttonID not in buttonStatus:
+                buttonStatus.append(buttonID)
+
+        else:
+            msg = mido.Message('note_off', channel=midiChannel, note=buttonID)
+            if buttonID in buttonStatus:
+                buttonStatus.remove(buttonID)
+
+        with mido.open_output(midiOutputDevice) as outMidi:
+            outMidi.send(msg)
+
+        return buttonStatus
+
 
     async def setMidiDeviceKey(self, midiOutputDevice, midiVal, buttonStatus):
 
