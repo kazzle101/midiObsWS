@@ -4,8 +4,8 @@ An interface to allow OBS to be controlled by a MIDI device via obs-Websockets.
 This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera. The MIDI device I've used is a Behringer X-Touch Mini.
 
 ## Update November 2023
-**Version 0.7 beta**
-Update so the LEDs on the controller show the selected scene correctly, now only the LED for the selected scene is lit.
+**Version 0.8 beta**
+Update so the LEDs on the controller show the selected scene correctly, now only the LED for the selected scene is lit. Also have the LEDs show according to the current settings in OBS on startup.
 
 ## Update August 2023
 **Version 0.6 beta**
