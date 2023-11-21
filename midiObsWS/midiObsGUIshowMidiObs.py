@@ -47,8 +47,6 @@ class ObsGUIshowMidiObs(object):
         except:
             return "error", "No MIDI device attached"
 
-
-
         exitAction = "close"
         midiSetup = ObsMidiSettings(self.config)
         scenesSectionData = guiCommon.getSectionData(midiObsData,"scenes")

@@ -127,6 +127,13 @@ class ObsWScmd(object):
 
         return r
 
+    async def getCurrentProgramSceneName(self):
+
+        rType = "GetCurrentProgramScene"
+        rData = None
+        e, r = await self.makeRequest(self.obsSocket, rType, rData)
+        return r
+
     async def makeToggleRequest(self, action, rData=None):
 
         rType = action
@@ -257,10 +264,19 @@ class ObsWScmd(object):
         buttonStatus = []
         changeStatus = []
         bs = []
+        midiOutputDevice = midiDeviceInfo["midiOutputDevice"]
+        midiChannel =  midiDeviceInfo["midiChannel"]
+
         midi.midiReset(midiDeviceInfo["midiOutputDevice"])
 
+        # print("getCurrentValues")
         # print(json.dumps(obsData, indent=4, sort_keys=False))
         # print(json.dumps(midiDeviceInfo, indent=4, sort_keys=False))
+
+        currentSceneName = None
+        currentProgramSceneName = await self.getCurrentProgramSceneName()
+        if "currentProgramSceneName" in currentProgramSceneName:
+            currentSceneName = str(currentProgramSceneName["currentProgramSceneName"])
 
         for m in obsData:
             if m["section"] == "controls" and m["buttonID"] >= 0:
@@ -285,16 +301,22 @@ class ObsWScmd(object):
                     midiVal.value = self.getValFromResponse(val)
                     buttonStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
 
+            if m["section"] == "scenes" and m["buttonID"] >= 0:
+                if m["name"] == currentSceneName:
+                    buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOutputDevice, midiChannel, m["buttonID"], buttonStatus, "on")
+                else:
+                    buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOutputDevice, midiChannel, m["buttonID"], buttonStatus, "off")
+
             if m["deviceType"] == "audio":
                 volume = await self.getInputVolume(m["name"])
                 m["changeValue"] = volume
 
                 midiVal = midi.MIDIvalue()
                 midiVal.status = "change"
-                midiVal.channel = midiDeviceInfo["midiChannel"]
+                midiVal.channel = midiChannel
                 midiVal.control = m["changeID"]
                 midiVal.value = volume
-                changeStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, changeStatus)
+                changeStatus = await midi.setMidiDeviceKey(midiOutputDevice, midiVal, changeStatus)
 
                 mute = await self.makeToggleRequest("GetInputMute", {"inputName": m["name"]})
                 # print(str(mute))
@@ -302,10 +324,10 @@ class ObsWScmd(object):
 
                 midiVal = midi.MIDIvalue()
                 midiVal.status = "button"
-                midiVal.channel = midiDeviceInfo["midiChannel"]
+                midiVal.channel = midiChannel
                 midiVal.control = m["buttonID"]
                 midiVal.value = mute["inputMuted"]
-                buttonStatus = await midi.setMidiDeviceKey(midiDeviceInfo["midiOutputDevice"], midiVal, buttonStatus)
+                buttonStatus = await midi.setMidiDeviceKey(midiOutputDevice, midiVal, buttonStatus)
 
         return buttonStatus, obsData
 
