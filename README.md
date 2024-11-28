@@ -49,7 +49,9 @@ git clone https://github.com/kazzle101/midiObsWS
 cd midiObsWS
 python midiObs.py
 ```
-Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'". If you see this error: "MidiInWinMM::openPort: error creating Windows MM MIDI input port." means it thinks something else is using the MIDI in port, the quick fix is to restart the computer (I've only seen this error once).
+Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'". 
+
+If you see this error: "MidiInWinMM::openPort: error creating Windows MM MIDI input port." means it thinks something else is using the MIDI in port, the quick fix is to restart the computer (I've only seen this error once).
 
 ### Linux Install (Debian / Ubuntu)
 ```
