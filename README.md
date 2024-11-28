@@ -40,16 +40,14 @@ PS c:\> python --version
 The computer I tested on had a couple of older versions of python and I had to remove these to have the correct/expected version show.
 
 You will probably need to update pip: python.exe -m pip install --upgrade pip
-
-```
-git clone https://github.com/kazzle101/midiObsWS
-cd midiObsWS
-python midisObs.py
-```
-Install the dependancies:
+Install the dependancies, download midiObsWS to your desired location and run program:
 ```
 pip install FreeSimpleGUI mido simpleobsws python-rtmidi 
 pip install websocket-client==1.6.1 websockets==11.0.3
+
+git clone https://github.com/kazzle101/midiObsWS
+cd midiObsWS
+python midiObs.py
 ```
 Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'" 
 
@@ -116,7 +114,7 @@ Usng your favourate SQLite browser (https://sqlitebrowser.org/) you can add the 
 ```
 INSERT INTO wsActions (io, showOnSetup, ioKind, name, display) VALUES ('input',1,'inputType' 'inputKind','inputName')
 ```
-where 
+where:
 - inputType: audio or video, this is for you to decide.
 - inputKind: the name of the missing input, from your list.
 - inputName: the same as the inputKind, but without the underscores.
@@ -134,7 +132,6 @@ Leave a note in the issues, and I'll do an update.
 - https://obsproject.com/
 - https://github.com/obsproject/obs-websocket - this is now included in OBS, v28.0.0 onwards
 - https://github.com/IRLToolkit/simpleobsws/tree/master
-
 
 ## Update Log
 **Version 0.6 beta - August 2023**
