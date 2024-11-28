@@ -1,7 +1,7 @@
 
 import sys
 import mido
-# import mido.backends.rtmidi  # included as a workaround for PYinstaller
+import mido.backends.rtmidi  # included as a workaround for PYinstaller
 import json
 
 if __name__ == "__main__":
