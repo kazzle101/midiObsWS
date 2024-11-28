@@ -1,61 +1,35 @@
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import sys
 import mido
-import os
 import time
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
     sys.exit(0)
     
-# from midiObsWS.midiObsControls import ObsControls
 from midiObsWS.midiObsWScmd import ObsWScmd
 from midiObsWS.midiObsMidiSettings import ObsMidiSettings
-from midiObsWS.midiObsFiles import ObsFiles
-# from midiObsWS.midiObsGUIcommon import ObsGUIcommon
 
 class ObsGUIsetupHost(object):
     
-    def __init__(self, guiTheme, guiMinSize, config):        
+    def __init__(self, guiTheme, guiMinSize):        
         self.guiTheme = guiTheme
         self.guiMinSize = guiMinSize
-        self.config = config
-        self.scriptDir = config["scriptDir"]
         return
 
-    async def showHostSetupGUI(self, midiObsConfigFile, midiObsDataFile, config):
-        # fileSettings = obsJSONsetup.JsonFileSettings(self.scriptLogging)
-        obsFiles = ObsFiles()
-        obsMidi = ObsMidiSettings(None)
-   
-        filename = os.path.join(self.scriptDir, midiObsDataFile)
-        error, midiObsData = obsFiles.loadJsonFile(filename)
-        if error:
-            exitAction = "error"
-            return exitAction, midiObsData, None
-
-        filename = os.path.join(self.scriptDir, midiObsConfigFile)
-        error, obsConfig = obsFiles.loadJsonFile(filename)
-        if error:
-            exitAction = "error"
-            return exitAction, obsConfig, None
-
-        # config = obsConfig["config"]
-        # config["scriptLogging"] = None
-        obsCmd = ObsWScmd(config, None, None, None)
+    async def showHostSetupGUI(self, config):
+        obsMidi = ObsMidiSettings(config)
+        obsCmd = ObsWScmd(config, None, None)
         
-        updated = False
-
+        newConfig = config    
         err, midiInputs = obsMidi.listMidiDevices()
         err, midiOutputs = obsMidi.listMidiOutputDevices()
 
         midiOutputs.insert(0, "not set")
 
-        # print("--- midiObsJson ---")
-        # print(json.dumps(midiObsJSON, indent=4, sort_keys=False))
-        # print("---config 1 ---")
-        # print(json.dumps(config, indent=4, sort_keys=False))
-
+        hostSetInfo = []
+        hostSetInfo.append("INFO: The OBS Websocket Host needs validating, enter details and click test")
+        hostSetInfo.append("")
 
         frameSize = (650,190)
         sg.theme(self.guiTheme)
@@ -83,13 +57,15 @@ class ObsGUIsetupHost(object):
             sg.Button("Set Midi Channel"),
             sg.Text("", key="midiChannelInfo")
         ]) 
-        midiLayout.append([sg.Text('The Midi Channel is used with Midi Out, for general devices this is normally 10')]) 
+        midiLayout.append([sg.Text('This Midi Channel is used with Midi Out, for general devices this is normally 10')]) 
 
         layout.append([
           [sg.Frame('Midi Device Settings', midiLayout, font='Any 12', title_color='blue', size=frameSize)],
         ])
 
         layout.append([sg.Button('Save and Close'), sg.Button('Close')]) #, sg.Button('Exit Program')])
+        
+        layout.append([sg.Text(hostSetInfo[newConfig["wsHostSet"]], size=(80), key="wsHostSetInfo")])
 
         window = sg.Window('MIDI-OBS - Settings ', layout, return_keyboard_events=True, resizable=True, finalize=True)
         window.set_min_size(self.guiMinSize)
@@ -98,18 +74,18 @@ class ObsGUIsetupHost(object):
         window.Element("wsPort").update(value=config["wsPort"])
         window.Element("wsPassword").update(value=config["wsPassword"])
 
-        if not "midiDevice" in midiObsData or midiObsData["midiDevice"] == "":
+        if config["midiIn"] == "":
             window.find_element("midiIn").update(value=midiInputs[0])
         else:      
-            window.find_element("midiIn").update(value=midiObsData["midiDevice"])
+            window.find_element("midiIn").update(value=config["midiIn"])
 
-        if not "midiOutputDevice" in midiObsData or midiObsData["midiOutputDevice"] == "":
+        if config["midiOut"] == "":
             window.find_element("midiOut").update(value=midiOutputs[0])
         else:
-            window.find_element("midiOut").update(value=midiObsData["midiOutputDevice"])
+            window.find_element("midiOut").update(value=config["midiOut"])
 
         window.Element("midiChannel").update(disabled=False)
-        window.Element("midiChannel").update(value=midiObsData["midiChannel"])
+        window.Element("midiChannel").update(value=config["midiChannel"])
         window.Element("midiChannel").update(disabled=True)
 
         while True:
@@ -121,6 +97,12 @@ class ObsGUIsetupHost(object):
                 wsPort = values["wsPort"].strip()
                 wsPassword = values["wsPassword"].strip()
                 error, response = await obsCmd.obsTest(wsAddress, wsPort, wsPassword)
+                if error:
+                    newConfig["wsHostSet"] = 0
+                else:
+                    newConfig["wsHostSet"] = 1
+                    
+                window.Element("wsHostSetInfo").update(value=str(hostSetInfo[newConfig["wsHostSet"]]))                                    
                 window.Element("obsTestInfo").update(value=str(response))
                 continue
 
@@ -165,53 +147,25 @@ class ObsGUIsetupHost(object):
                 break
 
             if event == "Close":
-                exitAction = "setup"
+                exitAction = "close"
                 break
 
             if event == "Save and Close":
                 exitAction = "setup"
-                updated = True
-                config["wsAddress"] = values["wsAddress"].strip()
-                config["wsPort"] = values["wsPort"].strip()
-                config["wsPassword"] = values["wsPassword"].strip()
+                newConfig["wsAddress"] = values["wsAddress"].strip()
+                newConfig["wsPort"] = values["wsPort"].strip()
+                newConfig["wsPassword"] = values["wsPassword"].strip()
 
-                midiObsData["midiDevice"] = values["midiIn"]
+                newConfig["midiSet"] = 1
+                newConfig["midiIn"] = values["midiIn"]
                 if values["midiOut"] == "not set":
-                    midiObsData["midiOutputDevice"] = ""
+                    newConfig["midiOut"] = ""
                 else:
-                    midiObsData["midiOutputDevice"] = values["midiOut"]
+                    newConfig["midiOut"] = values["midiOut"]
 
-                midiObsData["midiChannel"] = int(values["midiChannel"])
-                midiObsData["midiConfigured"] = 0 # this gets set to 1 when some button actions have been setup in showMidiSetupGUI
+                newConfig["midiChannel"] = int(values["midiChannel"])
                 break
-
-            # window.Element("midiChannel").update(value=guiCommon.limitMidiChannels(str(values["midiChannel"])))
     
         window.close()
-
-        # print("--- config ---")
-        # print(json.dumps(config, indent=4, sort_keys=False))
-
-        if updated:
-            obsConfig["config"] = {}
-            obsConfig["config"]["hostSet"] = 1
-            obsConfig["config"]["wsAddress"] = config["wsAddress"]
-            obsConfig["config"]["wsPort"] = config["wsPort"]
-            obsConfig["config"]["wsPassword"] = config["wsPassword"]
-            obsConfig["config"]["midiObsPath"] = self.config["midiObsPath"]
-            obsConfig["config"]["midiObsDataFile"] = self.config["midiObsDataFile"]
-
-            error, message = obsFiles.saveJSONfile(self.scriptDir, midiObsConfigFile, obsConfig)
-            if error:
-                exitAction = "error"
-                config = message
-
-            error, message = obsFiles.saveJSONfile(self.scriptDir, midiObsDataFile, midiObsData)
-            if error:
-                exitAction = "error"
-                config = message            
-
-
-        config["midiObsPath"] = self.config["midiObsPath"]
-        config["midiObsDataFile"] = self.config["midiObsDataFile"]
-        return exitAction, config, midiObsData
+        
+        return exitAction, newConfig 

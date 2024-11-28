@@ -1,13 +1,11 @@
 
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 import sys
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
     sys.exit(0)
     
-
-
 class ObsGUIerror(object):
     
     def __init__(self, guiTheme, guiMinSize):        

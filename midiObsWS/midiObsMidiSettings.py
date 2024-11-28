@@ -1,7 +1,7 @@
 
 import sys
 import mido
-import mido.backends.rtmidi  # included as a workaround for PYinstaller
+# import mido.backends.rtmidi  # included as a workaround for PYinstaller
 import json
 
 if __name__ == "__main__":
@@ -20,110 +20,46 @@ class ObsMidiSettings:
         value = 0
         channel = 0
 
-    def midiReset(self, midiOutputDevice):
+    def midiReset(self, midiOut):
 
-        if not midiOutputDevice or midiOutputDevice == "":
-            return
+        if not midiOut:
+            return 
 
-        with mido.open_output(midiOutputDevice, autoreset=True) as outMidi:
+        with mido.open_output(midiOut, autoreset=True) as outMidi:
             outMidi.reset()
         
         return
-
-    # used when an entry is manually changed on the GUIsetupMidi page
-    # midiConfig == midiObsData["midiConfiguration"]
-    def setMidiKeyValue(self, event, values, midiConfig):
-
-        if event == None:
-            return midiConfig
-        
-        # an entry that has been set to blank (unused) gets changed to -1
-        section, action, type = event.split("_",2)
-        value = values[event]
-        if not value:
-            value = -1
-        else:
-            value = int(value)
-
-        for d in midiConfig:
-            if d["section"] == section and d["action"] == action:
-                if type == "c":
-                    d["changeID"] = value
-                elif type == "b":
-                    d["buttonID"] = value
-                break
-
-        return midiConfig
-
-    # used when an entry is updated using a midi controller on the GUIsetupMidi page
-    # midiConfig == midiObsData["midiConfiguration"]
-    def setMidiObsValue(self, focus, midiVal, midiConfig):
-
-        if focus == None:
-            print("error: input not identified")
-            return midiConfig
-
-        section, action, type = focus.split("_",2)
-        for d in midiConfig:
-
-            if d["section"] == section and d["action"] == action:
-                if type == "c":
-                    d["changeID"] = midiVal.control
-                elif type == "b":
-                    d["buttonID"] = midiVal.control
-
-                break
-
-        return midiConfig
     
-    async def setMidiDeviceKeyOnOrOff(self, midiOutputDevice, midiChannel, buttonID, buttonStatus, onOff):
+    async def setMidiDeviceKeyOnOrOff(self, midiOut, midiChannel, midiID, buttonStatus, onOff):
 
-        if buttonID < 1:
+        if not midiOut or midiID < 0:
             return buttonStatus
-        
-        # print("setMidiDeviceKeyOnOrOff", buttonID, onOff)
-    
-        if onOff == "on":
-            msg = mido.Message('note_on', channel=midiChannel, note=buttonID) 
-            if buttonID not in buttonStatus:
-                buttonStatus.append(buttonID)
+            
+        if onOff == "on" or onOff == True:
+            msg = mido.Message('note_on', channel=midiChannel, note=midiID) 
+            if midiID not in buttonStatus:
+                buttonStatus.append(midiID)
 
         else:
-            msg = mido.Message('note_off', channel=midiChannel, note=buttonID)
-            if buttonID in buttonStatus:
-                buttonStatus.remove(buttonID)
+            msg = mido.Message('note_off', channel=midiChannel, note=midiID)
+            if midiID in buttonStatus:
+                buttonStatus.remove(midiID)
 
-        with mido.open_output(midiOutputDevice) as outMidi:
+        with mido.open_output(midiOut) as outMidi:
             outMidi.send(msg)
 
         return buttonStatus
-
-
-    async def setMidiDeviceKey(self, midiOutputDevice, midiVal, buttonStatus):
-
-        if midiVal.control < 0:
+    
+    async def setMidiDeviceChangeValue(self, midiOut, midiChannel, midiID, buttonStatus, value):
+    
+        if not midiOut or midiID < 0:
             return buttonStatus
-
-        if midiVal.status == "button" and midiVal.value == 0:
-            if midiVal.control in buttonStatus:
-                msg = mido.Message('note_on', channel=midiVal.channel, note=midiVal.control) 
-                buttonStatus.remove(midiVal.control)
-            else:
-                msg = mido.Message('note_off', channel=midiVal.channel, note=midiVal.control) 
-                buttonStatus.append(midiVal.control)
         
-            with mido.open_output(midiOutputDevice) as outMidi:
-                outMidi.send(msg)
-
-        if midiVal.status == "change":
-            msg = mido.Message('control_change', channel=midiVal.channel, control=midiVal.control, value=midiVal.value) 
-
-            with mido.open_output(midiOutputDevice) as outMidi:
-                outMidi.send(msg)
-
+        msg = mido.Message('control_change', channel=midiChannel, control=midiID, value=value)    
+        with mido.open_output(midiOut) as outMidi:
+            outMidi.send(msg)
+        
         return buttonStatus
-
-
 
     def midiToObj(self, midi):
         """
@@ -163,15 +99,6 @@ class ObsMidiSettings:
 
         return midiVal
 
-    def getFirstMidiInput(self):
-
-        inputNames = mido.get_input_names()
-        if not inputNames:
-            print("no MIDI input devices attached?")
-            return None
-
-        return 0
-
     def listMidiOutputDevices(self):
 
         devices = []
@@ -180,7 +107,8 @@ class ObsMidiSettings:
             return True, []    
 
         for n in outputNames:
-            devices.append(n)
+            if n not in devices:
+                devices.append(n)
 
         return False, devices
 
@@ -192,6 +120,7 @@ class ObsMidiSettings:
             return True, []
 
         for n in inputNames:
-            devices.append(n)
+            if n not in devices:
+                devices.append(n)
 
         return False, devices

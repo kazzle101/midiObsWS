@@ -1,213 +1,115 @@
 
 import os
 import sys
-import asyncio
+import tempfile
 
 if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
     sys.exit(0)
 
-from midiObsWS.midiObsFiles import ObsFiles
 from midiObsWS.midiObsDisplay import ObsDisplay
-from midiObsWS.midiObsJSONsetup import ObsJSONsetup
+from midiObsWS.midiObsDatabase import ObsDatabase
 from midiObsWS.midiObsMidiSettings import ObsMidiSettings
 from midiObsWS.midiObsControls import ObsControls
 
 class ObsStartup():
 
-    def __init__(self, scriptLogging):
-        if getattr(sys, 'frozen', False):
-            self.scriptDir = os.path.dirname(sys.executable)
-        else:
-            self.scriptDir = os.path.dirname(os.path.realpath(__file__))
-
+    def __init__(self, scriptDir, scriptLogging):
+        self.scriptDir = scriptDir 
         self.scriptLogging = scriptLogging
-
-        self.ws = {}
-        self.ws["Address"] = None
-        self.ws["Port"] = None
-        self.ws["Password"] = None
-
         return
+    
+    def filePermissionsCheck(self, pathfile):
 
-    def checkCanWriteToScriptDir(self, jsonConfigFilename, config):
-        obsFiles = ObsFiles()
+        path = os.path.dirname(pathfile)
+        try:
+            testfile = tempfile.TemporaryFile(dir = path)
+            testfile.close()
+        except (OSError, IOError) as e:
+            if e.errno == 13  or e.errno == 17:  # errno.EACCES, errno.EEXIST
+                return False
+            e.filename = path
+            raise
 
-        fn = os.path.join(self.scriptDir, jsonConfigFilename)
-        fCheck = obsFiles.filePermissionsCheck(fn)
+        return True
+
+    def checkCanWriteToScriptDir(self):
+
+        # fn = os.path.join(self.scriptDir, jsonConfigFilename)
+        fCheck = self.filePermissionsCheck(self.scriptDir)
         if not fCheck:
             print(f"cannot write to {self.scriptDir}, exiting")
-            display = ObsDisplay(config, None)
+            display = ObsDisplay()
             display.showErrorGUI(f"cannot write to directory: {self.scriptDir}")
             sys.exit(0)     
 
         return
 
-    def loadObsConfigJsonFile(self, midiObsConfigFile, config):
-        obsFiles = ObsFiles()
-        obsJSONsetup = ObsJSONsetup(self.scriptLogging)
-
-        fn = os.path.join(self.scriptDir, midiObsConfigFile)
-        error, midiObsConfig = obsFiles.loadJsonFile(fn)
+    def checkForDatabase(self):
+        db = ObsDatabase(self.scriptDir)
+        error, message = db.createDefaultDatabase()
         if error:
-            midiObsConfig = obsJSONsetup.createDefaultConfigData(self.scriptDir)
-            print(f"creating default {midiObsConfigFile} config file")
-            error, msg = obsFiles.saveJSONfile(self.scriptDir, midiObsConfigFile, midiObsConfig)
-            if error:            
-                display = ObsDisplay(config, None)
-                display.showErrorGUI(msg)           
-                print(f"json config data not loaded: {midiObsConfigFile}")
-                sys.exit(0)       
-
-        # convert old data to new version of config file
-        if "midiObsFile" in midiObsConfig["config"]:
-            midiObsConfig["config"]["midiObsDataFile"] = midiObsConfig["config"]["midiObsFile"]
-            midiObsConfig["config"].pop("midiObsFile", None)
-
-        return midiObsConfig
-    
-    def loadObsDataJsonFile(self, midiObsDataFile, config):
-        obsFiles = ObsFiles()
-        obsJSONsetup = ObsJSONsetup(self.scriptLogging)        
-
-        fn = os.path.join(self.scriptDir, midiObsDataFile)
-        error, midiObsData = obsFiles.loadJsonFile(fn)
-        if error:
-            midiObsData = obsJSONsetup.createDefaultData()
-            print(f"creating default {midiObsDataFile} data file")
-            error, msg = obsFiles.saveJSONfile(self.scriptDir, midiObsDataFile, midiObsData)
-            if error:            
-                display = ObsDisplay(config, None)
-                display.showErrorGUI(msg)           
-                print(f"json data data not loaded: {midiObsDataFile}")
-                sys.exit(0)      
-
-        return midiObsData
-    
-    def checkForMidiInputDevice(self, config, midiObsData):
-        midiSetup = ObsMidiSettings(config)
+            print(message)
+            display = ObsDisplay()
+            display.showErrorGUI(message)
+            sys.exit(0)
+        
+        return True
+        
+    def checkForMidiInputDevice(self):        
+        midiSetup = ObsMidiSettings(None)
         error, midiDevices = midiSetup.listMidiDevices()
         if error:
-            print("No MIDI input device attached")
-            display = ObsDisplay(config, None)
+            print("No MIDI input device attached (checkForMidiInputDevice)")
+            display = ObsDisplay()
             display.showErrorGUI("No MIDI input device attached")
             sys.exit(0)
 
-        if not midiObsData["midiDevice"]:
-            midiObsData["midiDevice"] = midiDevices[0]
-
-        return midiObsData, midiDevices
+        return midiDevices
     
-    def setupHost(self, config, midiObsData):
+    def hasMidiInDeviceChanged(self, config, midiDevices):
+        
+        if config["midiSet"] == 0:
+            return 0
+        
+        if config["midiIn"] not in midiDevices:
+            return 0
 
-        loop = asyncio.get_event_loop()
-        midiObsConfigFile = config["midiObsConfigFile"]
-        midiObsDataFile = config["midiObsDataFile"]
+        return config["midiSet"]
+    
+    def getInputsAndScenes(self, config):
+        
+        db = ObsDatabase(self.scriptDir)
+        controls = ObsControls(config)
+        
+        ws={}
+        ws["Address"] = config["wsAddress"]
+        ws["Port"] = config["wsPort"]
+        ws["Password"] = config["wsPassword"]
+        
+        error, inputsAndScenes = controls.getCurrentInputsAndScenes(ws)
+        if error:
+            print(f"error: {inputsAndScenes}")
+            return {}
 
-        display = ObsDisplay(config, None)
-        exitAction, config, midiObsData = display.showHostSetupGUI(midiObsConfigFile, midiObsDataFile, config)
-        if exitAction == "error":
-            display.showErrorGUI(f"{config}")
-            sys.exit(0)
-        if exitAction == "exit":
-            sys.exit(0)
+        # print(json.dumps(inputsAndScenes, indent=4, sort_keys=False))
+        
+        inputs = inputsAndScenes["GetInputList"]["inputs"]
+        scenes = inputsAndScenes["GetSceneList"]["scenes"]
+        
+        inputData = db.setInputsList(inputs)
+        scenesData = db.setScenesList(scenes)
+        
+        # print(json.dumps(inputData, indent=4, sort_keys=False))
+        # print(json.dumps(scenes, indent=4, sort_keys=False))
+        
+        return {"inputs": inputs, "scenes": scenes}
 
-        # config["scriptDir"] = self.scriptDir
-        # config["scriptLogging"] = self.scriptLogging
-
-        self.ws["Address"] = config["wsAddress"]
-        self.ws["Port"] = config["wsPort"]
-        self.ws["Password"] = config["wsPassword"]
-
-        return exitAction, midiObsData, config
-
-
-    def setInputsAndScenes(self, config, midiObsData, midiObsConfig):
-        obsJSONsetup = ObsJSONsetup(self.scriptLogging)
-        obsFiles = ObsFiles()
-
-        if "wsPassword" in config and config["wsPassword"]: 
-            self.ws["Address"] = config["wsAddress"]
-            self.ws["Port"] = config["wsPort"]
-            self.ws["Password"] = config["wsPassword"]
-
-        previousMidiObsData = midiObsData
-        controls = ObsControls(config, midiObsData, midiObsConfig)
-        display = ObsDisplay(config, None)
-
-        while True:
-            if self.ws["Password"] is not None:
-                ws = self.ws
-            else:
-                ws = None
-
-            error, inputsAndScenes = controls.getCurrentInputsAndScenes(ws)
-
-            if error == False:
-                break
-                
-            # print(error, inputsAndScenes)
-            # print(json.dumps(self.ws, indent=4, sort_keys=False))
-
-            if inputsAndScenes == "cannot connect":
-                exitAction, midiObsData, cnf  = self.setupHost(config, midiObsData)
-                if exitAction == "error":
-                    display.showErrorGUI(f"{config}")
-                    sys.exit(0)
-                elif exitAction == "exit":
-                    sys.exit(0)    
-            else:
-                print(f"OBS not Running or OBS-Websocket not installed,\n{inputsAndScenes}")
-                display.showErrorGUI(f"OBS not Running or OBS-Websocket not installed,\n{inputsAndScenes}")
-                sys.exit(0)   
-
-        # config["scriptDir"] = self.scriptDir
-        # config["scriptLogging"] = self.scriptLogging
-        config["wsAddress"] = self.ws["Address"]
-        config["wsPort"] = self.ws["Port"]
-        config["wsPassword"] = self.ws["Password"]
-
-
-        # print("setInputsAndScenes---------")
-        # print(json.dumps(config, indent=4, sort_keys=False))
-
-        if midiObsData["midiConfigured"] == 0 or not midiObsData["midiConfiguration"]:
-            midiObsData = obsJSONsetup.makeDefaultMidiObsData(midiObsData, midiObsConfig, inputsAndScenes)
-
-        if previousMidiObsData != midiObsData:
-            error, message = obsFiles.saveJSONfile(self.scriptDir,config["midiObsDataFile"], midiObsData)
-            if error:
-                print(f"{message}")
-                display.showErrorGUI(message)
-                sys.exit(0)
-
-        return inputsAndScenes, midiObsData, config
-
-    def checkMidiObsData(self, config, midiObsData):
-        display = ObsDisplay(config, None)
-        jsonDataFilename = config["midiObsDataFile"]
-
-        if type(midiObsData) is not dict:
-            print(f"wrong JSON data type for {jsonDataFilename}")
-            display.showErrorGUI(f"wrong JSON data type for {jsonDataFilename}")
-            sys.exit(0)
-
-        info = ""
-        if not "midiDevice" in midiObsData:
-            info += "midiDevice, "
-
-        if not "midiConfigured" in midiObsData:
-            info += "midiConfigured, "
-
-        if not "midiConfiguration" in midiObsData:
-            info += "midiConfiguration, "
-
-        if info:
-            info = info[0:-2]
-            print(f"\n## Fields [{info}] missing from {jsonDataFilename}")
-            display.showErrorGUI(f"fields [{info}] missing from {jsonDataFilename}")
-            sys.exit(0)
-
-        return False
-
+    def getListofInputKinds(self, config):
+        obsControls = ObsControls(config)        
+        e, data = obsControls.getCurrentInputsAndScenes()
+        if "GetInputList" not in data:
+            return ["Input list not found", e, data]
+               
+        return data["GetInputList"]
 
