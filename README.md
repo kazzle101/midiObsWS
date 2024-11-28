@@ -4,7 +4,7 @@ An interface to allow OBS to be controlled by a MIDI device via obs-Websockets.
 This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera. The MIDI device I've used is a Behringer X-Touch Mini.
 
 ## Update November 2024
-**Version 0.10 beta**
+**Version 0.10.1 beta**
 - Updated to use a SQLite database rather than using JSON files - this simplifies a lot of things, current users will need to reconfigure.
 - Fixed a bug that prevented removal of a previously set input on the setup screen.
 - Added ability to play Media Sources (subscribe button type video animations, tested with .mp4 and animated .gif files).
@@ -49,7 +49,7 @@ git clone https://github.com/kazzle101/midiObsWS
 cd midiObsWS
 python midiObs.py
 ```
-Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'" 
+Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'". If you see this error: "MidiInWinMM::openPort: error creating Windows MM MIDI input port." means it thinks something else is using the MIDI in port, the quick fix is to restart the computer (I've only seen this error once).
 
 ### Linux Install (Debian / Ubuntu)
 ```
