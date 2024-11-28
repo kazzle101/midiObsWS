@@ -5,7 +5,7 @@ with open("README.md", 'r') as f:
 
 setup(
     name="midiObsWS",
-    version="1.0.0",
+    version="1.0.10",
     description="An interface to allow OBS to be controlled by a MIDI device via obs-Websockets.",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -21,7 +21,7 @@ setup(
     include_package_data=True,
     install_requires=[
         "mido", "python-rtmidi", "websocket-client", "argparse", 
-        "simpleobsws", "pysimplegui"
+        "simpleobsws", "FreeSimpleGUI"
     ],
     entry_points={"console_scripts": ["midiObsWS=midiObsWS.__main__:main"]},
 )
