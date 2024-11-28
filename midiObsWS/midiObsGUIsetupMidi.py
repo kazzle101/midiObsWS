@@ -90,57 +90,74 @@ class ObsGUIsetupMidi(object):
         focus = None
         exitFromMidi = False
 
-        with mido.open_input(config["midiIn"]) as inMidi:
-            ## clear anything already in the midi input buffer
-            while inMidi.receive(block=False) is not None:
-                pass
+        try:
+            with mido.open_input(config["midiIn"], backend='mido.backends.rtmidi') as inMidi:
+                while inMidi.receive(block=False) is not None:
+                    pass
 
-            while True:
-                time.sleep(0.05)
+        except Exception as e:
+            print("MIDI ERROR (mido):")
+            print(e)
+            return "error", str(e)
 
-                ## read the midi device
-                for msg in inMidi.iter_pending():
-                    midiVal = midiSetup.midiToObj(msg)
-                    window.Element(focus).update(value=guiCommon.stringNumbersOnly(str(midiVal.control)))
 
-                if exitFromMidi:
-                    break
+        try:
+            with mido.open_input(config["midiIn"], backend='mido.backends.rtmidi') as inMidi:
+                ## clear anything already in the midi input buffer
+                while inMidi.receive(block=False) is not None:
+                    pass
 
-                ## window operations
-                event, values = window.read(timeout = 100)
+                while True:
+                    time.sleep(0.05)
 
-                if event == sg.WIN_CLOSED: # if user closes window
-                    exitAction = "exit"
-                    break
+                    ## read the midi device
+                    for msg in inMidi.iter_pending():
+                        midiVal = midiSetup.midiToObj(msg)
+                        window.Element(focus).update(value=guiCommon.stringNumbersOnly(str(midiVal.control)))
 
-                if event == 'Close':
-                    exitAction = ""
-                    break
+                    if exitFromMidi:
+                        break
 
-                if event == "Server Settings":
-                    exitAction = "host"
-                    break
+                    ## window operations
+                    event, values = window.read(timeout = 100)
 
-                if event == "Save and Close":
-                    newMidiIDs = []
-                    for key, value in values.items():                        
-                        if value == "" or not value:
-                            midiID = -1
-                        else:
-                            midiID = int(value)                        
-                        newMidiIDs.append({"name": key, "midiID": midiID})
+                    if event == sg.WIN_CLOSED: # if user closes window
+                        exitAction = "exit"
+                        break
+
+                    if event == 'Close':
+                        exitAction = ""
+                        break
+
+                    if event == "Server Settings":
+                        exitAction = "host"
+                        break
+
+                    if event == "Save and Close":
+                        newMidiIDs = []
+                        for key, value in values.items():                        
+                            if value == "" or not value:
+                                midiID = -1
+                            else:
+                                midiID = int(value)                        
+                            newMidiIDs.append({"name": key, "midiID": midiID})
                         
-                    allNames = self.updateAllNamesMidiID(allNames, newMidiIDs)
-                    db.updateTablesWithMidiValues(allNames)
-                    db.setAllConfigured(1)
-                    break
-                
-                keyValues = values.keys()
-                if event in keyValues:
-                    window.Element(event).update(value=guiCommon.stringNumbersOnly(values[event]))                
+                        allNames = self.updateAllNamesMidiID(allNames, newMidiIDs)
+                        db.updateTablesWithMidiValues(allNames)
+                        db.setAllConfigured(1)
+                        break
+        
+                    keyValues = values.keys()
+                    if event in keyValues:
+                        window.Element(event).update(value=guiCommon.stringNumbersOnly(values[event]))                
 
-                if window.FindElementWithFocus() != None:
-                    focus = window.FindElementWithFocus().Key
+                    if window.FindElementWithFocus() != None:
+                        focus = window.FindElementWithFocus().Key
+
+        except Exception as e:
+            print("MIDI ERROR (mido):")
+            print(e)
+            return "error", str(e)
 
         window.close()
         return exitAction, ""
