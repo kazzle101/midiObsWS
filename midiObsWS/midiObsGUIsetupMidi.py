@@ -2,6 +2,7 @@ import FreeSimpleGUI as sg
 import sys
 import mido
 import time
+import datetime 
 import os
 import json
 
@@ -9,13 +10,9 @@ if __name__ == "__main__":
     print("this python script only works from: midiObsWS.py")
     sys.exit(0)
 
-# from midiObsWS.midiObsControls import ObsControls
-# from midiObsWS.midiObsWScmd import ObsWScmd
 from midiObsWS.midiObsMidiSettings import ObsMidiSettings
-# from midiObsWS.midiObsFiles import ObsFiles
 from midiObsWS.midiObsGUIcommon import ObsGUIcommon
 from midiObsWS.midiObsDatabase import ObsDatabase
-
 class ObsGUIsetupMidi(object):
 
     def __init__(self, guiTheme, guiMinSize, scriptDir):
@@ -35,6 +32,34 @@ class ObsGUIsetupMidi(object):
         
         return allNames
 
+    def readMidiValues(self, values):
+     
+        mIDlist = []
+        duplicates = []
+        duplicatesText = ""
+        duplicatesError = False
+
+        newMidiIDs = []
+        for key, value in values.items():                        
+            if value == "" or not value:
+                midiID = -1
+            else:
+                midiID = int(value)                        
+            newMidiIDs.append({"name": key, "midiID": midiID})
+                            
+            if midiID in mIDlist and midiID > 0:
+                duplicates.append(midiID)                            
+            mIDlist.append(midiID)
+                            
+        duplicates = sorted(list(set(duplicates)))  ## make list distinct  
+        if len(duplicates) > 0:
+            dups = ", ".join(str(d) for d in duplicates) 
+            s = "s" if len(duplicates) > 1 else ""
+            duplicatesText = f"Duplicate Midi Value{s} found [{dups}], please check."
+            duplicatesError = True
+                
+        return newMidiIDs, duplicatesText, duplicatesError
+        
     def showMidiSetupGUI(self, config):
         db = ObsDatabase(self.scriptDir)
         guiCommon = ObsGUIcommon(config)
@@ -59,7 +84,9 @@ class ObsGUIsetupMidi(object):
         allNames = guiCommon.setAllnames(allNames, names)
 
         # print(json.dumps(sourcesBtn, indent=4, sort_keys=False))
-
+        
+        duplicates = {"Text": "", "Error": False, "Time" : datetime.datetime.now()}
+        
         column1 = sg.Column([
             [sg.Frame("1. Controls (buttons)", controls, vertical_alignment='top', element_justification='c', border_width=2)],
         ], element_justification='c', vertical_alignment='top')
@@ -75,6 +102,7 @@ class ObsGUIsetupMidi(object):
 
         layout.append([column1, column2, column3])
         layout.append([sg.Button('Save and Close'), sg.Button('Close'), sg.Button("Server Settings")])
+        layout.append([sg.Text(duplicates["Text"], size=(100), key="duplicatesTextInfo", font=("Arial", 10, "bold"))])
 
         window = sg.Window('MIDI-OBS - Setup', layout, return_keyboard_events=True, resizable=True, finalize=True)
         window.set_min_size(self.guiMinSize)
@@ -90,74 +118,62 @@ class ObsGUIsetupMidi(object):
         focus = None
         exitFromMidi = False
 
-        try:
-            with mido.open_input(config["midiIn"], backend='mido.backends.rtmidi') as inMidi:
-                while inMidi.receive(block=False) is not None:
-                    pass
+        with mido.open_input(config["midiIn"], backend='mido.backends.rtmidi') as inMidi:
+            ## clear anything already in the midi input buffer
+            while inMidi.receive(block=False) is not None:
+                pass
 
-        except Exception as e:
-            print("MIDI ERROR (mido):")
-            print(e)
-            return "error", str(e)
+            while True:
+                time.sleep(0.05)
 
+                ## read the midi device
+                for msg in inMidi.iter_pending():
+                    midiVal = midiSetup.midiToObj(msg)
+                    window.Element(focus).update(value=guiCommon.stringNumbersOnly(str(midiVal.control)))
 
-        try:
-            with mido.open_input(config["midiIn"], backend='mido.backends.rtmidi') as inMidi:
-                ## clear anything already in the midi input buffer
-                while inMidi.receive(block=False) is not None:
-                    pass
+                if exitFromMidi:
+                    break
 
-                while True:
-                    time.sleep(0.05)
+                ## window operations
+                event, values = window.read(timeout = 100)
 
-                    ## read the midi device
-                    for msg in inMidi.iter_pending():
-                        midiVal = midiSetup.midiToObj(msg)
-                        window.Element(focus).update(value=guiCommon.stringNumbersOnly(str(midiVal.control)))
+                if event == sg.WIN_CLOSED: # if user closes window
+                    exitAction = "exit"
+                    break
 
-                    if exitFromMidi:
-                        break
+                if event == 'Close':
+                    exitAction = ""
+                    break
 
-                    ## window operations
-                    event, values = window.read(timeout = 100)
+                if event == "Server Settings":
+                    exitAction = "host"
+                    break
 
-                    if event == sg.WIN_CLOSED: # if user closes window
-                        exitAction = "exit"
-                        break
-
-                    if event == 'Close':
-                        exitAction = ""
-                        break
-
-                    if event == "Server Settings":
-                        exitAction = "host"
-                        break
-
-                    if event == "Save and Close":
-                        newMidiIDs = []
-                        for key, value in values.items():                        
-                            if value == "" or not value:
-                                midiID = -1
-                            else:
-                                midiID = int(value)                        
-                            newMidiIDs.append({"name": key, "midiID": midiID})
+                if event == "Save and Close":
+                    window.Element("duplicatesTextInfo").update(value=str(""))
+                    newMidiIDs, duplicates["Text"], duplicates["Error"] = self.readMidiValues(values)
                         
-                        allNames = self.updateAllNamesMidiID(allNames, newMidiIDs)
-                        db.updateTablesWithMidiValues(allNames)
-                        db.setAllConfigured(1)
-                        break
+                    if duplicates["Error"]:
+                        duplicates["Time"] = datetime.datetime.now() + datetime.timedelta(seconds=30)
+                        window.Element("duplicatesTextInfo").update(value=str(duplicates["Text"]))
+                        continue
+                          
+                    allNames = self.updateAllNamesMidiID(allNames, newMidiIDs)
+                    db.updateTablesWithMidiValues(allNames)
+                    db.setAllConfigured(1)
+                    break
         
-                    keyValues = values.keys()
-                    if event in keyValues:
-                        window.Element(event).update(value=guiCommon.stringNumbersOnly(values[event]))                
+                if duplicates["Error"] and datetime.datetime.now() > duplicates["Time"]:
+                    duplicates["Error"] = False
+                    duplicates["Text"] = ""
+                    window.Element("duplicatesTextInfo").update(value=str(duplicates["Text"]))
+        
+                keyValues = values.keys()
+                if event in keyValues:
+                    window.Element(event).update(value=guiCommon.stringNumbersOnly(values[event]))                
 
-                    if window.FindElementWithFocus() != None:
-                        focus = window.FindElementWithFocus().Key
-
-        except Exception as e:
-            print("MIDI ERROR (mido):")
-            print(e)
-            return "error", str(e)
+                if window.FindElementWithFocus() != None:
+                    focus = window.FindElementWithFocus().Key
 
         window.close()
         return exitAction, ""

@@ -56,13 +56,13 @@ class ObsGUIshowMidiObs(object):
         except:
             return "error", "Cannot connect to OBS: {}".format(sys.exc_info()[1])
 
-        try:
-            with mido.open_input(midiIn) as inMidi:
-                ## clear anything already in the midi input buffer
-                while inMidi.receive(block=False) is not None:
-                    pass
-        except:
-            return "error", "No MIDI device attached"
+        # try:
+        #     with mido.open_input(midiIn) as inMidi:
+        #         ## clear anything already in the midi input buffer
+        #         while inMidi.receive(block=False) is not None:
+        #             pass
+        # except:
+        #     return "error", "No MIDI device attached"
 
         exitAction = "close"        
         obsCmd = ObsWScmd(config, self.scriptDir, obsSocket)
