@@ -162,11 +162,12 @@ class ObsWScmd(object):
             else:
                 response = await self.makeToggleRequest(allInput["uuid"])
                 
-            if "outputActive" in response:
-                buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOut, midiChannel, midiID, buttonStatus, response["outputActive"])
-            else:
-                buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOut, midiChannel, midiID, buttonStatus, val)
-        
+            if response is None or not "ouputActive" in response:
+                response = {}
+
+            buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOut, midiChannel, 
+                                        midiID, buttonStatus, response.get("outputActive", val))
+
         elif allInput["section"] == "sourcesBtn":
             if allInput["type"] == "audio":
                 response = await self.makeToggleRequest("SetInputMute", {"inputMuted": val, "inputUuid": allInput["uuid"]})                
@@ -175,7 +176,7 @@ class ObsWScmd(object):
                 response = await self.makeToggleRequest(allInput["uuid"])
                 buttonStatus = await midi.setMidiDeviceKeyOnOrOff(midiOut, midiChannel, midiID, buttonStatus, val)
             
-        if response is None:
+        if response is None or len(response) == 0:
             response = f"OK: {val}"
                 
         return str(response), buttonStatus
