@@ -104,8 +104,10 @@ class ObsGUIsetupMidi(object):
         layout.append([sg.Button('Save and Close'), sg.Button('Close'), sg.Button("Server Settings")])
         layout.append([sg.Text(duplicates["Text"], size=(100), key="duplicatesTextInfo", font=("Arial", 10, "bold"))])
 
-        window = sg.Window('MIDI-OBS - Setup', layout, return_keyboard_events=True, resizable=True, finalize=True)
+        window = sg.Window('MIDI-OBS - Setup', layout, return_keyboard_events=True, 
+                           resizable=True, finalize=True)
         window.set_min_size(self.guiMinSize)
+        window.force_focus()
 
         for name in allNames:
             # print(name)
@@ -113,6 +115,12 @@ class ObsGUIsetupMidi(object):
             window[name['name']].bind('<Leave>', ' +MOUSE AWAY+')
             window[name['name']].bind("<FocusIn>", " +INPUT FOCUS+")
             window[name['name']].update(value=guiCommon.setDefaultValue(name['midiID']))
+
+        try:
+            window[allNames[0]['name']].Widget.focus()
+            print(f"Focus set to: {allNames[0]['name']}")
+        except Exception as e:
+            print(f"Error setting focus: {e}")
 
         exitAction = ""
         focus = None

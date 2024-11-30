@@ -45,9 +45,8 @@ class ObsGUIshowMidiObs(object):
         data, names = guiCommon.makeSectionSourcesRot(None, userInputs)
         allInputs = guiCommon.setAllnames(allInputs, names)
 
-        # print(json.dumps(allInputs, indent=4, sort_keys=False))
-
-
+        # print(json.dumps(allInputs, indent=4, sort_keys=False)
+        
         obsSocket = obsControls.websocketConnect()     # send the connection string
 
         try:
@@ -55,14 +54,6 @@ class ObsGUIshowMidiObs(object):
             await obsSocket.wait_until_identified() # Wait for the identification handshake to complete
         except:
             return "error", "Cannot connect to OBS: {}".format(sys.exc_info()[1])
-
-        # try:
-        #     with mido.open_input(midiIn) as inMidi:
-        #         ## clear anything already in the midi input buffer
-        #         while inMidi.receive(block=False) is not None:
-        #             pass
-        # except:
-        #     return "error", "No MIDI device attached"
 
         exitAction = "close"        
         obsCmd = ObsWScmd(config, self.scriptDir, obsSocket)
@@ -88,8 +79,10 @@ class ObsGUIshowMidiObs(object):
 
         layout.append([sg.Button('Setup'), sg.Button('Exit Program')]) #, sg.Button('Close')
 
-        window = sg.Window('MIDI-OBS', layout, return_keyboard_events=True, resizable=True, finalize=True)
+        window = sg.Window('MIDI-OBS', layout, return_keyboard_events=True, 
+                           resizable=True, finalize=True)
         window.set_min_size(self.guiMinSize)
+        window.force_focus()
 
         with mido.open_input(midiIn) as inMidi:
             ## clear anything already in the midi input buffer

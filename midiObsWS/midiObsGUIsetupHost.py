@@ -67,8 +67,10 @@ class ObsGUIsetupHost(object):
         
         layout.append([sg.Text(hostSetInfo[newConfig["wsHostSet"]], size=(80), key="wsHostSetInfo")])
 
-        window = sg.Window('MIDI-OBS - Settings ', layout, return_keyboard_events=True, resizable=True, finalize=True)
+        window = sg.Window('MIDI-OBS - Settings ', layout, return_keyboard_events=True, 
+                           resizable=True, finalize=True)
         window.set_min_size(self.guiMinSize)
+        window.force_focus()
 
         window.Element("wsAddress").update(value=config["wsAddress"])
         window.Element("wsPort").update(value=config["wsPort"])
