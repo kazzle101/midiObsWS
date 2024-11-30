@@ -45,7 +45,7 @@ You will probably need to update pip: python.exe -m pip install --upgrade pip
 ```
 git clone https://github.com/kazzle101/midiObsWS
 cd midiObsWS
-python midisObs.py
+python midiObs.py
 ```
 Install the dependancies:
 ```
@@ -63,7 +63,7 @@ sudo python -m pip install argparse simpleobsws FreeSimpleGUI --break-system-pac
 
 git clone https://github.com/kazzle101/midiObsWS
 cd midiObsWS
-python midisObs.py
+python midiObs.py
 ```
 
 ### Apple Mac (macOS Ventura)
