@@ -4,11 +4,12 @@ An interface to allow OBS to be controlled by a MIDI device via obs-Websockets.
 This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera. The MIDI device I've used is a Behringer X-Touch Mini.
 
 ## Update November 2024
-**Version 0.10.2 beta**
+**Version 0.10 beta**
 - Updated to use a SQLite database rather than using JSON files - this simplifies a lot of things, current users will need to reconfigure.
 - Fixed a bug that prevented removal of a previously set input on the setup screen.
 - Added ability to play Media Sources (subscribe button type video animations, tested with .mp4 and animated .gif files).
 - Replaced pysimplegui with [FreeSimpleGUI](https://github.com/spyoungtech/FreeSimpleGUI) to keep everything open source.
+- Added check to detect duplication of Midi Input values on the Midi input setup page when Save and Close is clicked.
 
 ## Update November 2023
 **Version 0.8 beta**
@@ -20,7 +21,7 @@ Connect your MIDI input device and start and configure OBS before you launch mid
 To configure OBS go to - Tools > obs-websocket Settings, enable Websocket server and generate a password, and click the Show Connect Info button for the login information.
 
 ### Windows Executable
-A Windows Standalone executable is now incuded, copy onto your PC somewhere suitable and double-click it. The latest version can be found in the [Releases](https://github.com/kazzle101/midiObsWS/releases) section.
+A Windows Standalone executable is now incuded in the dist folder, copy onto your PC somewhere suitable and double-click it. [DOWNLOAD HERE](https://github.com/kazzle101/midiObsWS/raw/main/dist/midiObsWS.exe)
 
 The executable was created with PyInstaller using:
 ```
@@ -40,18 +41,18 @@ PS c:\> python --version
 The computer I tested on had a couple of older versions of python and I had to remove these to have the correct/expected version show.
 
 You will probably need to update pip: python.exe -m pip install --upgrade pip
-Install the dependancies, download midiObsWS to your desired location and run program:
+
+```
+git clone https://github.com/kazzle101/midiObsWS
+cd midiObsWS
+python midisObs.py
+```
+Install the dependancies:
 ```
 pip install FreeSimpleGUI mido simpleobsws python-rtmidi 
 pip install websocket-client==1.6.1 websockets==11.0.3
-
-git clone https://github.com/kazzle101/midiObsWS
-cd midiObsWS
-python midiObs.py
 ```
-Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'". 
-
-If you see this error: "MidiInWinMM::openPort: error creating Windows MM MIDI input port." means it thinks something else is using the MIDI in port, the quick fix is to restart the computer (I've only seen this error once).
+Note the version numbers on the websockets, using the latest versions gives an error when connecting to OBS: "BaseEventLoop.create_connection() got an unexpected keyword argument 'extra_headers'" 
 
 ### Linux Install (Debian / Ubuntu)
 ```
@@ -116,7 +117,7 @@ Usng your favourate SQLite browser (https://sqlitebrowser.org/) you can add the 
 ```
 INSERT INTO wsActions (io, showOnSetup, ioKind, name, display) VALUES ('input',1,'inputType' 'inputKind','inputName')
 ```
-where:
+where 
 - inputType: audio or video, this is for you to decide.
 - inputKind: the name of the missing input, from your list.
 - inputName: the same as the inputKind, but without the underscores.
@@ -127,13 +128,13 @@ Leave a note in the issues, and I'll do an update.
 ## Known Issues
 - The password being stored in plain text.
 - If you reconfigure OBS this won't pick up the change, you will need to go back into the setup screen.
-- No checks are mode for duplicate numbers - the same MIDI control can be attached to multiple controls.
 - The GUI is a bit old fashioned, this is an attempt to have an interface that will work on multiple platforms and be reasonably simple.
 
 ## Links
 - https://obsproject.com/
 - https://github.com/obsproject/obs-websocket - this is now included in OBS, v28.0.0 onwards
 - https://github.com/IRLToolkit/simpleobsws/tree/master
+
 
 ## Update Log
 **Version 0.6 beta - August 2023**
