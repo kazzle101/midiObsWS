@@ -116,12 +116,8 @@ class ObsGUIsetupMidi(object):
             window[name['name']].bind("<FocusIn>", " +INPUT FOCUS+")
             window[name['name']].update(value=guiCommon.setDefaultValue(name['midiID']))
 
-        try:
-            window[allNames[0]['name']].Widget.focus()
-            print(f"Focus set to: {allNames[0]['name']}")
-        except Exception as e:
-            print(f"Error setting focus: {e}")
-
+        window[allNames[0]['name']].Widget.focus()
+        
         exitAction = ""
         focus = None
         exitFromMidi = False
