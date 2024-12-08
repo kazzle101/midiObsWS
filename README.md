@@ -1,7 +1,7 @@
 # midiObsWS
 An interface to allow OBS to be controlled by a MIDI device via obs-Websockets.
 
-This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera. The MIDI device I've used is a Behringer X-Touch Mini.
+This system has been written to provide basic functionality; scene switching, volume control and allow operation of the main controls such as recording, streaming and the virtual camera. The MIDI device I've used is a Behringer X-Touch Mini (on this model use Layer B as on Layer A it uses the same Midi Identity for the press button and the twiddly knob).
 
 ## Update November 2024
 **Version 0.10 beta**
